@@ -9,11 +9,11 @@ class test_handler : public serenity::http::request_handler<test_handler> {
         static bool handler_executed;
 
         test_handler() {
-            add_get("testresult",
-                    [this](const serenity::http::request &req, serenity::http::response &res) -> void
-                    {
-                    }
-            );
+            //add_get("testresult",
+            //        [this](const serenity::http::request &req, serenity::http::response &res) -> void
+            //        {
+            //        }
+            //);
         }
 
         void handle(const serenity::http::request &req, serenity::http::response &resp) override
