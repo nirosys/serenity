@@ -21,6 +21,8 @@ add_subdirectory(src)
 add_subdirectory(test)
 # Documentation
 add_subdirectory(docs)
+# Examples
+add_subdirectory(examples)
 
 # Enable 'make test'
 #enable_testing()

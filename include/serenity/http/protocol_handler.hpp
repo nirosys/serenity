@@ -8,6 +8,12 @@
 
 namespace serenity { namespace http {
 
+    const unsigned int nothing = 0;
+    const unsigned int crlf_01_start = 1;
+    const unsigned int crlf_01_end = 2;
+    const unsigned int crlf_02_start = 3;
+    const unsigned int crlf_02_end = 4;
+
     template <class cust_handler, class connection_type>
     class protocol_handler : public ::serenity::net::protocol_handler {
         public:
@@ -19,38 +25,64 @@ namespace serenity { namespace http {
             status process(char *data, std::size_t bytes); 
             std::vector<boost::asio::const_buffer> get_response();
 
-            response response_;
         private:
+            response response_;
             cust_handler request_handler_;
             connection_type &connection_;
+            std::array<char, 4096> data_;
+            unsigned int data_end_;
+            unsigned int parse_state_;
     };
 
 
     template <class cust_handler, class connection_type>
     protocol_handler<cust_handler, connection_type>::protocol_handler(connection_type &conn) :
-        connection_(conn)
+        connection_(conn),
+        parse_state_(nothing)
     {
     }
 
     template <class cust_handler, class connection_type>
     serenity::net::protocol_handler::status protocol_handler<cust_handler, connection_type>::process(char *data, std::size_t bytes)
     {
-        // buffer data... wait until it can be parsed..
-        // parse data.. into request..
-        // call handle on request_handler_ with parsed request.
-        // write response to connection.
-        std::cerr << "Received:" << std::endl
-                  << data << std::endl;
+        if (bytes + data_end_ > data_.size())
+            return serenity::net::protocol_handler::status::error;
 
-        request req;
-        req.method = "GET";
-        req.uri = "http://localhost:8080/testblah";
-        req.version_major = 1;
-        req.version_minor = 0;
+        std::cerr << "Received:" << std::endl;
+        std::cerr << std::string(data, bytes);
 
-        request_handler_.handle(req, response_);
+        memcpy(data_.data() + data_end_, data, bytes);
+        data_end_ += bytes;
 
-        return status::response;
+        char *end_of_request = nullptr;
+        for (int i=0; (i < bytes) && (parse_state_ < crlf_02_end); ++i) {
+            switch (parse_state_) {
+                case nothing:
+                case crlf_01_end:
+                    if (data[i] == '\r') ++parse_state_;
+                    else parse_state_ = nothing;
+                    break;
+                case crlf_01_start:
+                case crlf_02_start:
+                    if (data[i] == '\n') ++parse_state_;
+                    else parse_state_ = nothing;
+                    break;
+                case crlf_02_end:
+                    end_of_request = &data[i];
+                    break;
+            }
+        }
+
+        if (parse_state_ == crlf_02_end) {
+            request req;
+            req.parse(data_.data(), data_end_);
+            data_end_ = 0;
+
+            request_handler_.handle(req, response_);
+            return status::response;
+        }
+
+        return status::no_response;
     }
 
     template <class cust_handler, class connection_type>

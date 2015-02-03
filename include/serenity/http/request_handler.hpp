@@ -12,8 +12,30 @@ namespace serenity { namespace http {
         public:
             using proto_handler = protocol_handler<custom_handler, ::serenity::net::connection<custom_handler>>;
 
-            virtual void handle(const request &req, response &resp) = 0;
+            void handle(const request &req, response &resp);
+
+            void add_get(const std::string &endpoint, std::function<void(const request&,response&)> handler) {
+                get_handlers_.push_back({ endpoint, handler });
+            }
+
+        private:
+            std::vector<std::pair<std::string,std::function<void (const request &, response &)>>> get_handlers_;
     };
+
+    template <class custom_handler>
+    void request_handler<custom_handler>::handle(const request &req, response &resp)
+    {
+        if (req.method == "GET") {
+            for (auto handler : get_handlers_) {
+                std::string &h_uri = handler.first;
+                if (h_uri.length() == req.uri.length() && handler.first.find(req.uri) != std::string::npos) {
+                    std::cerr << "URI: " << req.uri << "  handler: " << h_uri << std::endl;
+                    handler.second(req, resp);
+                    return;
+                }
+            }
+        }
+    }
 
     
 } /* serenity */ } /* http */

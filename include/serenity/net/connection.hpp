@@ -19,7 +19,7 @@ namespace serenity { namespace net {
             explicit connection(boost::asio::ip::tcp::socket socket,
                     connection_manager<req_handler> &manager);
 
-            virtual ~connection() { }
+            virtual ~connection() {}
 
             // Connection start/stop, does not add/remove to/from connection manager.
             void start();
@@ -40,7 +40,7 @@ namespace serenity { namespace net {
             proto_handler protocol_handler_;
 
             void do_read();
-            void do_write(std::vector<boost::asio::const_buffer> &&);
+            void do_write(const std::vector<boost::asio::const_buffer> &);
     };
 
     #include "../../../src/net/connection.cc" 

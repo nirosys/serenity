@@ -26,29 +26,36 @@ void connection<req_handler>::do_read() {
                     typename proto_handler::status status = protocol_handler_.process(buffer_.data(), bytes);
                     if (status == proto_handler::status::response) {
                        do_write(protocol_handler_.get_response());
+                       std::cerr << "==========================================" << std::endl;
                     }
                     else if (status == proto_handler::status::error) {
+                       std::cerr << "Error received from proto_handler." << std::endl;
                        shutdown();
+                       return;
                     }
                 }
                 else if (ec != boost::asio::error::operation_aborted) {
                     shutdown();
+                    return;
                 }
+
+                do_read();
             }
     );
 }
 
 template <class req_handler>
-void connection<req_handler>::do_write(std::vector<boost::asio::const_buffer> &&buffers) {
+void connection<req_handler>::do_write(const std::vector<boost::asio::const_buffer> &buffers) {
     auto self(this->shared_from_this());
     boost::asio::async_write(socket_, buffers,
-            [this, self](boost::system::error_code ec, std::size_t)
+            [this, self](boost::system::error_code ec, std::size_t size)
             {
-                if (!ec) {
-                    boost::system::error_code ignored_ec;
-                    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both,
-                            ignored_ec);
-                }
+                // TODO: Do not close connection on write.. keep-alive connections.
+                //if (!ec) {
+                //    boost::system::error_code ignored_ec;
+                //    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both,
+                //            ignored_ec);
+                //}
                 if (ec != boost::asio::error::operation_aborted) {
                     connection_manager_.stop(this->shared_from_this());
                 }

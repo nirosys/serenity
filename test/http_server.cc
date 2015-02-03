@@ -1,50 +1,51 @@
 #include <random>
 #include <curl/curl.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "catch.hpp"
 #include "serenity/serenity.hpp"
 
 class test_handler : public serenity::http::request_handler<test_handler> {
     public:
+        static std::string body_content;
         static bool handler_executed;
 
         test_handler() {
-            //add_get("testresult",
-            //        [this](const serenity::http::request &req, serenity::http::response &res) -> void
-            //        {
-            //        }
-            //);
-        }
-
-        void handle(const serenity::http::request &req, serenity::http::response &resp) override
-        {
-            handler_executed = true;
+            add_get("/testresult",
+                    [this](const serenity::http::request &req, serenity::http::response &res) -> void
+                    {
+                        res.status = 200;
+                        res.content = body_content;
+                        handler_executed = true;
+                    }
+            );
         }
 };
 
+std::string test_handler::body_content = "{ \"test_status\": \"success\"; }";
 bool test_handler::handler_executed = false;
 
 
+size_t ignore_body(void *ptr, size_t size, size_t nmemb, void *ignored) {
+    return size * nmemb;
+}
+size_t gather_body(void *ptr, size_t size, size_t nmemb, char *buffer) {
+    strcpy(buffer, static_cast<const char*>(ptr));
+    return size * nmemb;
+}
 
 TEST_CASE("Verify server creation", "[server]") {
     std::random_device rd;
     std::uniform_int_distribution<int> dist(9000, 12000);
     int port = dist(rd);
-    bool handler_executed = false;
     
     CAPTURE(port);
 
     serenity::net::server<test_handler> server(port);
 
-    //server.add_get("/testresult",
-    //    [&handler_executed](const serenity::http::request &req, serenity::http::response &res) -> int
-    //    {
-    //        handler_executed = true;
-    //        return 200;
-    //    }
-    //);
-
     server.run();
+    usleep(100);
 
     SECTION("Should be listening") {
         REQUIRE(server.is_running() == true);
@@ -72,12 +73,36 @@ TEST_CASE("Verify server creation", "[server]") {
         char url[64];
         snprintf(url, sizeof(url), "http://localhost:%d/testresult", port);
         curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_body);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, url);
 
         CURLcode res = curl_easy_perform(curl);
         curl_easy_cleanup(curl);
 
+        REQUIRE(res == CURLE_OK);
+
         REQUIRE(test_handler::handler_executed == true);
+    }
+
+    SECTION("Should send data correctly.") {
+        CURL *curl = curl_easy_init();
+        REQUIRE(curl != nullptr);
+
+        char buffer[256];
+        char url[64];
+        snprintf(url, sizeof(url), "http://localhost:%d/testresult", port);
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, gather_body);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, buffer);
+
+        CURLcode res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+
+        REQUIRE(res == CURLE_OK);
+
+        REQUIRE(test_handler::handler_executed == true);
+
+        REQUIRE(std::string(buffer) == test_handler::body_content);
     }
 }
 

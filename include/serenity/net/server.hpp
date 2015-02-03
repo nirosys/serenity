@@ -22,11 +22,12 @@ namespace serenity { namespace net {
             ~server();
 
             // Status
-            bool is_running() const { std::cerr << "Running: " << is_running_ << std::endl; return is_running_; }
+            bool is_running() const { return is_running_; }
 
             void run();
             void stop();
 
+            void wait_to_end();
 
         private:
             boost::asio::io_service io_service_;
@@ -74,12 +75,18 @@ namespace serenity { namespace net {
 
     template <class req_handler>
     void server<req_handler>::run() {
+        is_running_ = true;
         running_thread_ = std::thread(
                 [this]() {
-                    is_running_ = true;
                     io_service_.run();
                 }
         );
+    }
+
+    template <class req_handler>
+    void server<req_handler>::wait_to_end() {
+        if (running_thread_.joinable())
+            running_thread_.join();
     }
 
     template <class req_handler>
@@ -119,6 +126,7 @@ namespace serenity { namespace net {
         signals_.async_wait(
                 [this](boost::system::error_code, int)
                 {
+                    std::cerr << "Stopping server.." << std::endl;
                     stop();
                     connection_manager_.stop();
                     //connection_manager_.start(std::make_shared<connection>(
