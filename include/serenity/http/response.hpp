@@ -20,7 +20,7 @@ namespace serenity { namespace http {
     class response {
         public:
             /** \brief Converts the response into ASIO buffer(s) for transmitting to the client. */
-            std::vector<boost::asio::const_buffer> to_buffers() {
+            boost::asio::const_buffer to_buffers() {
                 std::vector<boost::asio::const_buffer> buffers;
                 std::stringstream stream;
 
@@ -35,8 +35,7 @@ namespace serenity { namespace http {
                 stream << "\r\n" << content;
 
                 response_str = stream.str();
-                buffers.push_back(boost::asio::buffer(response_str));
-                return buffers;
+                return boost::asio::buffer(response_str);
             }
 
             /** \brief Creates a string representation for the provided status code. */

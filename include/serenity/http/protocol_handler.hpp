@@ -30,7 +30,7 @@ namespace serenity { namespace http {
             net::protocol_status process(char *data, std::size_t bytes) override; 
 
             /** \brief Return the currently associated response. */
-            std::vector<boost::asio::const_buffer> get_response();
+            const response_buffer get_response() override;
 
         private:
             response response_;
@@ -113,7 +113,7 @@ namespace serenity { namespace http {
     }
 
     template <class cust_handler, class connection_type>
-    std::vector<boost::asio::const_buffer> protocol_handler<cust_handler, connection_type>::get_response() {
+    const net::protocol_handler::response_buffer protocol_handler<cust_handler, connection_type>::get_response() {
         return response_.to_buffers();
     }
 } };

@@ -53,7 +53,7 @@ namespace serenity { namespace net {
             proto_handler protocol_handler_;
 
             void do_read();
-            void do_write(const std::vector<boost::asio::const_buffer> &);
+            void do_write(const typename proto_handler::response_buffer &);
     };
 
     #include "../../../src/net/connection.cc" 

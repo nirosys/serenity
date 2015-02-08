@@ -45,8 +45,9 @@ void connection<req_handler>::do_read() {
 }
 
 template <class req_handler>
-void connection<req_handler>::do_write(const std::vector<boost::asio::const_buffer> &buffers) {
+void connection<req_handler>::do_write(const typename proto_handler::response_buffer &buffer) {
     auto self(this->shared_from_this());
+    std::array<boost::asio::const_buffer, 1> buffers = {{ buffer }};
     boost::asio::async_write(socket_, buffers,
             [this, self](boost::system::error_code ec, std::size_t size)
             {
