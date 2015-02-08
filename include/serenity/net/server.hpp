@@ -11,22 +11,37 @@
 
 namespace serenity { namespace net {
 
+    /** \brief TCP Server for accepting connections, and delegating handlers.
+     *
+     *  Provides the main entry point for serenity by creating a listening
+     *  TCP socket on the provided port/address and accepting incoming connections.
+     */
     template <class req_handler>
     class server {
         public:
             server(const server &) = delete;
             server(void) = delete;
 
+            /** \brief Create a new server listening on all interfaces on
+             *         the provided port.
+             */
             server(uint32_t port); // Default 0.0.0.0
 
             ~server();
 
-            // Status
+            
+            /** \brief Returns true if the server has successfully started.
+             *         False otherwise.
+             */
             bool is_running() const { return is_running_; }
 
+            /** \brief Starts the current server. */
             void run();
+            /** \brief Stops the current server, severing all connections. */
             void stop();
 
+            /** \brief Blocks thread execution until the server has successfully
+             *         shut down. */
             void wait_to_end();
 
         private:
@@ -38,7 +53,10 @@ namespace serenity { namespace net {
             bool is_running_;
             connection_manager<req_handler> connection_manager_;
 
+            // Sets up the stop handler to catch signals for shutdown cues.
             void do_wait_stop();
+
+            // Handles incoming connections.
             void do_accept();
     };
 
@@ -126,12 +144,8 @@ namespace serenity { namespace net {
         signals_.async_wait(
                 [this](boost::system::error_code, int)
                 {
-                    std::cerr << "Stopping server.." << std::endl;
                     stop();
                     connection_manager_.stop();
-                    //connection_manager_.start(std::make_shared<connection>(
-                    //            std::move(socket_), connection_manager_, 
-                    // Connection manager.. close all connections
                 }
         );
     }

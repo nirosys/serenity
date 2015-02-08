@@ -6,6 +6,11 @@
 
 namespace serenity { namespace net {
 
+    /** \brief Manages all currently active connections to the server.
+     *
+     * Acts as a container for incoming connections so that they can be tracked
+     * and managed.
+     */
     template <class req_handler>
     class connection_manager {
         public:
@@ -16,10 +21,17 @@ namespace serenity { namespace net {
 
             connection_manager() { }
 
+            /** Adds a new connection to the pool, and starts the connection. */
             void start(connection_ptr);
+            /** Stops a connection, and removes it from the pool. */
             void stop(connection_ptr);
+            /** Stops all connections, and removes them all from the pool. */
             void stop();
 
+            /** Removes a connection from the pool, but does not stop it.
+             * \note This should only be called from connection, or if you
+             *       REALLY know what you're doing.
+             */
             void remove(const connection_ptr &);
 
         private:

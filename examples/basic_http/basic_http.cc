@@ -2,6 +2,7 @@
 
 const int gPort = 8084;
 
+using namespace examples;
 int main( int argc, char **argv ) {
     serenity::net::server<basic_handler> server(gPort);
 

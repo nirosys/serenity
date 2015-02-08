@@ -6,6 +6,8 @@
 #include "catch.hpp"
 #include "serenity/serenity.hpp"
 
+namespace tests {
+
 class test_handler : public serenity::http::request_handler<test_handler> {
     public:
         static std::string body_content;
@@ -13,11 +15,12 @@ class test_handler : public serenity::http::request_handler<test_handler> {
 
         test_handler() {
             add_get("/testresult",
-                    [this](const serenity::http::request &req, serenity::http::response &res) -> void
+                    [this](const serenity::http::request &req, serenity::http::response &res) -> serenity::http::request_status
                     {
                         res.status = 200;
                         res.content = body_content;
                         handler_executed = true;
+                        return serenity::http::request_status::ok;
                     }
             );
         }
@@ -30,6 +33,7 @@ bool test_handler::handler_executed = false;
 size_t ignore_body(void *ptr, size_t size, size_t nmemb, void *ignored) {
     return size * nmemb;
 }
+
 size_t gather_body(void *ptr, size_t size, size_t nmemb, char *buffer) {
     strcpy(buffer, static_cast<const char*>(ptr));
     return size * nmemb;
@@ -104,5 +108,26 @@ TEST_CASE("Verify server creation", "[server]") {
 
         REQUIRE(std::string(buffer) == test_handler::body_content);
     }
+
+    SECTION("Should return 404 for not found endpoints") {
+        CURL *curl = curl_easy_init();
+        REQUIRE(curl != nullptr);
+
+        char buffer[256];
+        char url[64];
+        long http_code = 0;
+        snprintf(url, sizeof(url), "http://localhost:%d/testresult_NOT_FOUND", port);
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_body);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, nullptr);
+
+        CURLcode res = curl_easy_perform(curl);
+        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
+        curl_easy_cleanup(curl);
+
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 404);
+    }
 }
 
+}

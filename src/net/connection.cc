@@ -23,12 +23,12 @@ void connection<req_handler>::do_read() {
             [this, self](boost::system::error_code ec, std::size_t bytes)
             {
                 if (!ec) {
-                    typename proto_handler::status status = protocol_handler_.process(buffer_.data(), bytes);
-                    if (status == proto_handler::status::response) {
+                    protocol_status status = protocol_handler_.process(buffer_.data(), bytes);
+                    if (status == protocol_status::response) {
                        do_write(protocol_handler_.get_response());
                        std::cerr << "==========================================" << std::endl;
                     }
-                    else if (status == proto_handler::status::error) {
+                    else if (status == protocol_status::error) {
                        std::cerr << "Error received from proto_handler." << std::endl;
                        shutdown();
                        return;
