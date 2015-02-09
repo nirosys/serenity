@@ -8,21 +8,21 @@
 
 namespace tests {
 
-class test_handler : public serenity::http::request_handler<test_handler> {
+class test_handler : public serenity::http::service {
     public:
         static std::string body_content;
         static bool handler_executed;
 
         test_handler() {
-            add_get("/testresult",
-                    [this](const serenity::http::request &req, serenity::http::response &res) -> serenity::http::request_status
-                    {
-                        res.status = 200;
-                        res.content = body_content;
-                        handler_executed = true;
-                        return serenity::http::request_status::ok;
-                    }
-            );
+            //add_get("/testresult",
+            //        [this](const serenity::http::request &req, serenity::http::response &res) -> serenity::http::request_status
+            //        {
+            //            res.status = 200;
+            //            res.content = body_content;
+            //            handler_executed = true;
+            //            return serenity::http::request_status::ok;
+            //        }
+            //);
         }
 };
 
@@ -46,7 +46,7 @@ TEST_CASE("Verify server creation", "[server]") {
     
     CAPTURE(port);
 
-    serenity::net::server<test_handler> server(port);
+    serenity::http::server server(port);
 
     server.run();
     usleep(100);

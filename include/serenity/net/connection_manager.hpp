@@ -11,10 +11,12 @@ namespace serenity { namespace net {
      * Acts as a container for incoming connections so that they can be tracked
      * and managed.
      */
-    template <class req_handler>
+    template <class request_type, class response_type>
     class connection_manager {
         public:
-            using connection_ptr = std::shared_ptr<connection<req_handler>>;
+            using connection_ptr = std::shared_ptr<connection<request_type, response_type>>;
+            using request = request_type;
+            using response = response_type;
 
             connection_manager(const connection_manager &) = delete;
             connection_manager &operator=(const connection_manager &) = delete;
@@ -39,27 +41,27 @@ namespace serenity { namespace net {
     };
 
 
-    template <class req_handler>
-    void connection_manager<req_handler>::start(connection_ptr conn) {
+    template <class request_type, class response_type>
+    void connection_manager<request_type, response_type>::start(connection_ptr conn) {
         connections_.insert(conn);
         conn->start();
     }
 
-    template <class req_handler>
-    void connection_manager<req_handler>::stop(connection_ptr conn) {
+    template <class request_type, class response_type>
+    void connection_manager<request_type, response_type>::stop(connection_ptr conn) {
         connections_.erase(conn);
         conn->stop();
     }
 
-    template <class req_handler>
-    void connection_manager<req_handler>::stop() {
+    template <class request_type, class response_type>
+    void connection_manager<request_type, response_type>::stop() {
         for (auto conn : connections_)
             conn->stop();
         connections_.clear();
     }
 
-    template <class req_handler>
-    void connection_manager<req_handler>::remove(const connection_ptr &conn) {
+    template <class request_type, class response_type>
+    void connection_manager<request_type, response_type>::remove(const connection_ptr &conn) {
         connections_.erase(conn);
     }
     

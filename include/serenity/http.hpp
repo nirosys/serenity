@@ -12,13 +12,28 @@ namespace serenity { namespace http {
         not_found,               // Requested endpoint is not found.
         invalid_method,          // Provided method is unknown.
     };
+
+
 } /* http */ } /* serenity */
 
 #include "http/request.hpp"
 #include "http/response.hpp"
-#include "http/request_handler.hpp"
-#include "http/versioned_handler.hpp"
-#include "http/protocol_handler.hpp"
-#include "net/server.hpp"
+#include "http/service_resolver.hpp"
+
+namespace serenity {
+    namespace common {
+        template <class request, class response>
+        class service;
+    }
+    namespace net {
+        template <class resolver_type>
+        class server;
+    }
+}
+
+namespace serenity { namespace http {
+    using service = common::service<request, response>;
+    using server = ::serenity::net::server<service_resolver<request, response>>;
+} }
 
 #endif /* end of include guard: SERENITY_HTTP_HPP_ */

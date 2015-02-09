@@ -3,6 +3,10 @@
 #include <string>
 #include <map>
 
+#include "request_dispatcher.hpp"
+#include "service_resolver.hpp"
+#include "response.hpp"
+
 namespace serenity { namespace http {
 
     class request {
