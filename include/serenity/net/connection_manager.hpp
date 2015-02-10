@@ -1,5 +1,6 @@
 #include <set>
 #include "connection.hpp"
+#include "serenity/common/request_dispatcher.hpp"
 
 #ifndef SERENITY_NET_CONNECTION_MANAGER_HPP_
 #define SERENITY_NET_CONNECTION_MANAGER_HPP_
@@ -11,12 +12,12 @@ namespace serenity { namespace net {
      * Acts as a container for incoming connections so that they can be tracked
      * and managed.
      */
-    template <class request_type, class response_type>
+    template <class service_resolver_type>
     class connection_manager {
         public:
-            using connection_ptr = std::shared_ptr<connection<request_type, response_type>>;
-            using request = request_type;
-            using response = response_type;
+            using connection_ptr = std::shared_ptr<connection<service_resolver_type>>;
+            using request = typename service_resolver_type::request;
+            using response = typename service_resolver_type::response;
 
             connection_manager(const connection_manager &) = delete;
             connection_manager &operator=(const connection_manager &) = delete;
@@ -41,27 +42,27 @@ namespace serenity { namespace net {
     };
 
 
-    template <class request_type, class response_type>
-    void connection_manager<request_type, response_type>::start(connection_ptr conn) {
+    template <class service_resolver_type>
+    void connection_manager<service_resolver_type>::start(connection_ptr conn) {
         connections_.insert(conn);
         conn->start();
     }
 
-    template <class request_type, class response_type>
-    void connection_manager<request_type, response_type>::stop(connection_ptr conn) {
+    template <class service_resolver_type>
+    void connection_manager<service_resolver_type>::stop(connection_ptr conn) {
         connections_.erase(conn);
         conn->stop();
     }
 
-    template <class request_type, class response_type>
-    void connection_manager<request_type, response_type>::stop() {
+    template <class service_resolver_type>
+    void connection_manager<service_resolver_type>::stop() {
         for (auto conn : connections_)
             conn->stop();
         connections_.clear();
     }
 
-    template <class request_type, class response_type>
-    void connection_manager<request_type, response_type>::remove(const connection_ptr &conn) {
+    template <class service_resolver_type>
+    void connection_manager<service_resolver_type>::remove(const connection_ptr &conn) {
         connections_.erase(conn);
     }
     

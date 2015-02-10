@@ -8,6 +8,8 @@ namespace serenity { namespace common {
         public:
             using request = request_type;
             using response = response_type;
+
+            service() { }
     };
     
 } /* http */ } /* serenity */

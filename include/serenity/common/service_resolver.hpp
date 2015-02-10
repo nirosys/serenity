@@ -21,5 +21,4 @@ namespace serenity { namespace common {
 } /* common */ } /* serenity */
 
 
-
 #endif /* end of include guard: SERENITY_COMMON_SERVICE_RESOLVER_HPP__ */

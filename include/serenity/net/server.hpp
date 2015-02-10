@@ -19,9 +19,12 @@ namespace serenity { namespace net {
     template <class resolver_type>
     class server {
         public:
-            using request = typename resolver_type::request;
             using resolver = resolver_type;
+            using request = typename resolver_type::request;
             using response = typename resolver_type::request;
+            using connection = connection<resolver>;
+            using dispatcher = typename connection::dispatcher; 
+            using manager = connection_manager<resolver>;
 
             server(const server &) = delete;
             server(void) = delete;
@@ -41,6 +44,7 @@ namespace serenity { namespace net {
 
             /** \brief Starts the current server. */
             void run();
+
             /** \brief Stops the current server, severing all connections. */
             void stop();
 
@@ -56,8 +60,9 @@ namespace serenity { namespace net {
             std::thread running_thread_;
             bool is_running_;
 
-            connection_manager<request, response> connection_manager_;
+            manager connection_manager_;
             resolver service_resolver_;
+            dispatcher request_dispatcher_;
 
             // Sets up the stop handler to catch signals for shutdown cues.
             void do_wait_stop();
@@ -71,7 +76,9 @@ namespace serenity { namespace net {
         io_service_(),
         signals_(io_service_),
         acceptor_(io_service_),
-        socket_(io_service_)
+        socket_(io_service_),
+        service_resolver_(),
+        request_dispatcher_(service_resolver_)
     {
         signals_.add(SIGINT);
         signals_.add(SIGTERM);
@@ -87,7 +94,6 @@ namespace serenity { namespace net {
         acceptor_.listen();
 
         do_accept();
-
     }
 
     template <class resolver_type>
@@ -135,8 +141,11 @@ namespace serenity { namespace net {
                     if (!ec) {
                         // add connection to manager..
                         connection_manager_.start(
-                                std::make_shared<connection<request, response>>(
-                                    std::move(socket_), connection_manager_)
+                                std::make_shared<connection>(
+                                    std::move(socket_),
+                                    connection_manager_,
+                                    request_dispatcher_
+                                )
                         );
                         socket_.close();
                     }

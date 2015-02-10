@@ -8,8 +8,8 @@ set(test_SRCS
       main.cc
       common.cc
       http_server.cc
-      http_request.cc
-      http_request_handler.cc
+      #http_request.cc
+      #      http_request_handler.cc
     )
 
 # Add includes for Catch
