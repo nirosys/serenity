@@ -4,7 +4,6 @@
 #include <map>
 #include <iostream>
 
-#include "service_resolver.hpp"
 #include "response.hpp"
 
 namespace serenity { namespace http {
@@ -37,13 +36,12 @@ namespace serenity { namespace http {
             std::string post_data;
 
             /** \brief Add data to the request for parsing. */
-            void add_data(char *request_data, std::size_t bytes) {
-                std::cerr << "Data (" << bytes << "):" << std::endl
-                    << request_data << std::endl;
+            void add_data(const char *request_data, std::size_t bytes) {
+                //std::cerr << "Data (" << bytes << "):" << std::endl
+                //    << request_data << std::endl;
                 memcpy(data_.data() + data_end_, request_data, bytes);
                 data_end_ += bytes;
 
-                char *end_of_request = nullptr;
                 int i = 0;
                 for (; (i < bytes) && (parse_state_ < post_end); ++i) {
                     switch (parse_state_) {
@@ -57,13 +55,12 @@ namespace serenity { namespace http {
                             if (request_data[i] == '\n') ++parse_state_;
                             else parse_state_ = nothing;
                             break;
-                        case crlf_02_end: // TODO: This never gets hit.
-                            end_of_request = &request_data[i];
+                        case crlf_02_end:
                             ++parse_state_;
                             break;
                     }
                 }
-                is_complete_ = (parse_state_ == post_end);
+                is_complete_ = (parse_state_ >= crlf_02_end);
                 if (is_complete_)
                     parse();
             }
@@ -82,6 +79,7 @@ namespace serenity { namespace http {
                 int state = 0;
                 std::string header;
                 std::string value;
+                //std::cerr << "[request] Parsing" << std::endl;
                 for (const char *p = data_.data(); (p - data_.data()) < data_end_; ++p) {
                     switch (state) {
                         case 0:
@@ -155,6 +153,7 @@ namespace serenity { namespace http {
                             break;
                     }
                 }
+                data_end_ = 0;
                 return (state > 0);
             }
 

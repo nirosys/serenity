@@ -15,14 +15,14 @@ find_package(Boost 1.56.0 REQUIRED COMPONENTS system)
 
 include_directories(include ${Boost_INCLUDE_DIRS})
 
-# Main source for libserenity.a
-add_subdirectory(src)
 # Unit Tests
 add_subdirectory(test)
 # Documentation
 add_subdirectory(docs)
 # Examples
 add_subdirectory(examples)
+# Spikes
+add_subdirectory(spikes)
 
 # Enable 'make test'
 #enable_testing()

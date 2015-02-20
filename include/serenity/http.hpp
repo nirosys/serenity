@@ -1,7 +1,6 @@
 #ifndef SERENITY_HTTP_HPP_
 #define SERENITY_HTTP_HPP_
 
-
 namespace serenity { namespace http {
 
     enum class request_status {
@@ -13,12 +12,13 @@ namespace serenity { namespace http {
         invalid_method,          // Provided method is unknown.
     };
 
-
 } /* http */ } /* serenity */
 
 #include "http/request.hpp"
 #include "http/response.hpp"
 #include "http/service_resolver.hpp"
+#include "http/service.hpp"
+#include "http/policies/url.hpp"
 
 namespace serenity {
     namespace common {
@@ -32,8 +32,11 @@ namespace serenity {
 }
 
 namespace serenity { namespace http {
-    using service = common::service<request, response>;
-    using server = ::serenity::net::server<service_resolver<request, response>>;
+    template <typename... policy_types>
+    using resolver = service_resolver<request, response, policies::url::policy_set<policy_types...>>;
+
+    template <typename... policy_types>
+    using server = ::serenity::net::server<resolver<policy_types...>>;
 } }
 
 #endif /* end of include guard: SERENITY_HTTP_HPP_ */

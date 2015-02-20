@@ -1,5 +1,8 @@
 #ifndef SERENITY_COMMON_SERVICE_RESOLVER_HPP__
 #define SERENITY_COMMON_SERVICE_RESOLVER_HPP__
+#include <memory>
+#include <vector>
+#include "service.hpp"
 
 namespace serenity { namespace common {
 
@@ -12,10 +15,20 @@ namespace serenity { namespace common {
             service_resolver(const service_resolver &) = delete;
             service_resolver &operator=(const service_resolver &) = delete;
 
-            virtual handler resolve(const request_type &) = 0;
+            bool resolve(const request_type &, service<request_type, response_type> &) {
+                return false;
+            }
+
+            // TODO: Add constructor params.
+            template <class service_type>
+            void add_service(const std::string &name) {
+                services_[name] = std::unique_ptr<service<request_type,response_type>>(new service_type());
+                std::cerr << "[resolver] Adding '" << name << "' of type: " << typeid(service_type).name() << std::endl;
+            }
 
         protected:
             service_resolver() { }
+            std::map<std::string, std::unique_ptr<service<request_type, response_type>>> services_;
     };
     
 } /* common */ } /* serenity */

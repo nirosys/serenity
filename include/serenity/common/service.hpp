@@ -10,6 +10,8 @@ namespace serenity { namespace common {
             using response = response_type;
 
             service() { }
+
+            virtual bool handle(const request_type &, response_type &) = 0;
     };
     
 } /* http */ } /* serenity */

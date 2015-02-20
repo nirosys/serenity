@@ -1,7 +1,6 @@
 #ifndef SERENITY_COMMON_REQUEST_DISPATCHER_HPP__
 #define SERENITY_COMMON_REQUEST_DISPATCHER_HPP__
 
-
 namespace serenity { namespace common {
 
     template <class service_resolver>
@@ -9,24 +8,45 @@ namespace serenity { namespace common {
         public:
             using request = typename service_resolver::request;
             using response = typename service_resolver::response;
+            using handler = typename service_resolver::handler;
 
-            request_dispatcher(const service_resolver &);
+            request_dispatcher(service_resolver &);
 
             bool dispatch(const request &, response &);
 
         private:
-            const service_resolver &service_resolver_;
+            service_resolver &service_resolver_;
     };
 
     template <class service_resolver>
-    request_dispatcher<service_resolver>::request_dispatcher(const service_resolver &res) : service_resolver_(res) {
+    request_dispatcher<service_resolver>::request_dispatcher(service_resolver &res) :
+        service_resolver_(res)
+    {
     }
 
-
     template <class service_resolver>
-    bool request_dispatcher<service_resolver>::dispatch(const request &req, response &resp)
+    bool request_dispatcher<service_resolver>::dispatch(const request &req_const, response &resp)
     {
-        return false;
+        // NOTE: if the request does not specify a valid end-point then the
+        //  resolver should return a handler that will generate a NOT FOUND,
+        //  or similar response.
+//        std::cerr << "[dispatcher] Dispatching..." << std::endl;
+
+        typename service_resolver::service svc;
+
+        request req = req_const;
+
+        if (service_resolver_.resolve(req, svc)) {
+            if (!svc.handle(req, resp)) {
+                resp.status = 500;
+                resp.content = "";
+            }
+        }
+        else {
+            //std::cerr << "[dispatcher] Not handling." << std::endl;
+        }
+
+        return true;
     }
     
 } /* common */ } /* serenity */

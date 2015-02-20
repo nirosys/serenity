@@ -52,6 +52,9 @@ namespace serenity { namespace net {
              *         shut down. */
             void wait_to_end();
 
+
+            resolver &get_resolver() { return service_resolver_; }
+
         private:
             boost::asio::io_service io_service_;
             boost::asio::ip::tcp::acceptor acceptor_;
@@ -105,12 +108,12 @@ namespace serenity { namespace net {
 
     template <class resolver_type>
     void server<resolver_type>::run() {
+        is_running_ = true;
         running_thread_ = std::thread(
                 [this]() {
                     io_service_.run();
                 }
         );
-        is_running_ = true;
     }
 
     template <class resolver_type>

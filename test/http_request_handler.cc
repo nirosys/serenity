@@ -17,7 +17,7 @@ using namespace tests;
 TEST_CASE("Verify HTTP Request Handler", "[handler]") {
 }
 
-TEST_CASE("Verify HTTP Versioned Request Handler", "[handler]") {
+TEST_CASE("Verify HTTP Version Policy Applied to Handler", "[handler]") {
     using namespace http_request_handler;
     serenity::http::request req;
     serenity::http::response resp;
