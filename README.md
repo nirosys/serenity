@@ -19,7 +19,17 @@ services that expose REST APIs to clients.
 
     * File Handler
     * Extra URI parts as arguments
-    * Request handler for different URI prefixes
-        * Ie.  /files/[path to file] would run a specific handler to return files.
-          and /api/v1/blah would execute API v1 handlers.
 
+
+## Usage
+Serenity is fairly simple to use, by design, requiring only access to the
+serenity server, and protocol specific resolvers. Examples of usage can be
+found in `examples/` and other more specific examples of usage can be found
+in the unit tests (`test/`).
+
+This is a header only library, but using cmake the examples, unit tests, and
+spikes can be built. Unit tests can be run via `make run_tests`, or
+`make test_report` for jUnit output.
+
+The basic\_http example is a good starting point for getting a RESTful service
+embedded into your application.

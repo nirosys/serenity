@@ -16,9 +16,16 @@ namespace serenity { namespace net {
      *  Provides the main entry point for serenity by creating a listening
      *  TCP socket on the provided port/address and accepting incoming connections.
      */
-    template <class req_handler>
+    template <class resolver_type>
     class server {
         public:
+            using resolver = resolver_type;
+            using request = typename resolver_type::request;
+            using response = typename resolver_type::request;
+            using connection = connection<resolver>;
+            using dispatcher = typename connection::dispatcher; 
+            using manager = connection_manager<resolver>;
+
             server(const server &) = delete;
             server(void) = delete;
 
@@ -37,12 +44,16 @@ namespace serenity { namespace net {
 
             /** \brief Starts the current server. */
             void run();
+
             /** \brief Stops the current server, severing all connections. */
             void stop();
 
             /** \brief Blocks thread execution until the server has successfully
              *         shut down. */
             void wait_to_end();
+
+
+            resolver &get_resolver() { return service_resolver_; }
 
         private:
             boost::asio::io_service io_service_;
@@ -51,7 +62,10 @@ namespace serenity { namespace net {
             boost::asio::signal_set signals_;
             std::thread running_thread_;
             bool is_running_;
-            connection_manager<req_handler> connection_manager_;
+
+            manager connection_manager_;
+            resolver service_resolver_;
+            dispatcher request_dispatcher_;
 
             // Sets up the stop handler to catch signals for shutdown cues.
             void do_wait_stop();
@@ -60,12 +74,14 @@ namespace serenity { namespace net {
             void do_accept();
     };
 
-    template <class req_handler>
-    server<req_handler>::server(uint32_t port) :
+    template <class resolver_type>
+    server<resolver_type>::server(uint32_t port) :
         io_service_(),
         signals_(io_service_),
         acceptor_(io_service_),
-        socket_(io_service_)
+        socket_(io_service_),
+        service_resolver_(),
+        request_dispatcher_(service_resolver_)
     {
         signals_.add(SIGINT);
         signals_.add(SIGTERM);
@@ -81,18 +97,17 @@ namespace serenity { namespace net {
         acceptor_.listen();
 
         do_accept();
-
     }
 
-    template <class req_handler>
-    server<req_handler>::~server() {
+    template <class resolver_type>
+    server<resolver_type>::~server() {
         if (is_running_) {
             stop();
         }
     }
 
-    template <class req_handler>
-    void server<req_handler>::run() {
+    template <class resolver_type>
+    void server<resolver_type>::run() {
         is_running_ = true;
         running_thread_ = std::thread(
                 [this]() {
@@ -101,14 +116,14 @@ namespace serenity { namespace net {
         );
     }
 
-    template <class req_handler>
-    void server<req_handler>::wait_to_end() {
+    template <class resolver_type>
+    void server<resolver_type>::wait_to_end() {
         if (running_thread_.joinable())
             running_thread_.join();
     }
 
-    template <class req_handler>
-    void server<req_handler>::stop() {
+    template <class resolver_type>
+    void server<resolver_type>::stop() {
         acceptor_.close();
         if (is_running_) {
             io_service_.stop();
@@ -118,8 +133,8 @@ namespace serenity { namespace net {
         }
     }
 
-    template <class req_handler>
-    void server<req_handler>::do_accept() {
+    template <class resolver_type>
+    void server<resolver_type>::do_accept() {
         acceptor_.async_accept(socket_,
                 [this](boost::system::error_code ec)
                 {
@@ -128,8 +143,12 @@ namespace serenity { namespace net {
                     }
                     if (!ec) {
                         // add connection to manager..
-                        connection_manager_.start(std::make_shared<connection<req_handler>>(
-                                    std::move(socket_), connection_manager_)
+                        connection_manager_.start(
+                                std::make_shared<connection>(
+                                    std::move(socket_),
+                                    connection_manager_,
+                                    request_dispatcher_
+                                )
                         );
                         socket_.close();
                     }
@@ -139,8 +158,8 @@ namespace serenity { namespace net {
         );
     }
 
-    template <class req_handler>
-    void server<req_handler>::do_wait_stop() {
+    template <class resolver_type>
+    void server<resolver_type>::do_wait_stop() {
         signals_.async_wait(
                 [this](boost::system::error_code, int)
                 {

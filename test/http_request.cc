@@ -7,7 +7,8 @@ using namespace tests;
 
 TEST_CASE("Verify HTTP GET Request Parsing", "[request]") {
     serenity::http::request request;
-    request.parse(requests::std_get_request, strlen(requests::std_get_request));
+    request.add_data(requests::std_get_request, ::strlen(requests::std_get_request));
+    request.parse();
     SECTION("Can parse method") {
         REQUIRE("GET" == request.method);
     }
@@ -36,7 +37,8 @@ TEST_CASE("Verify HTTP GET Request Parsing", "[request]") {
 
 TEST_CASE("Verify HTTP POST Request Parsing", "[request]") {
     serenity::http::request request;
-    request.parse(requests::std_post_request, strlen(requests::std_post_request));
+    request.add_data(requests::std_post_request, strlen(requests::std_post_request));
+    request.parse();
 
     SECTION("Can Parse Method") {
         REQUIRE("/favicon.ico" == request.uri);
