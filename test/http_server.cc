@@ -24,6 +24,12 @@ namespace tests {
                                 return 0;
                             }
                            );
+                    add_get("cause_exception",
+                            [this](const serenity::http::request &req, serenity::http::response &res) -> uint32_t
+                            {
+                                throw std::runtime_error("This is intended..");
+                            }
+                           );
                 }
         };
         std::string test_handler::body_content = "{ \"test_status\": \"success\"; \"version\": 1; }";
@@ -157,7 +163,7 @@ TEST_CASE("Verify versioned service", "[server]") {
     server.run();
     usleep(1000);
 
-    SECTION("Verify v1 Call") {
+    SECTION("Should return 200, with data, on correct v1 call") {
         long http_code = 0;
         std::string body;
 
@@ -167,7 +173,7 @@ TEST_CASE("Verify versioned service", "[server]") {
         REQUIRE(http_code == 200);
         REQUIRE(body == v1::test_handler::body_content);
     }
-    SECTION("Verify v2 Call") {
+    SECTION("Should return 200, with data, on correct v2 call") {
         long http_code = 0;
         std::string body;
 
@@ -177,7 +183,7 @@ TEST_CASE("Verify versioned service", "[server]") {
         REQUIRE(http_code == 200);
         REQUIRE(body == v2::test_handler::body_content);
     }
-    SECTION("Verify v1 & v2 Call") {
+    SECTION("Should return 200, with data, on correct, v1 & v2 calls in sequence") {
         std::string body;
         long http_code = 0;
 
@@ -192,6 +198,48 @@ TEST_CASE("Verify versioned service", "[server]") {
         REQUIRE(res == CURLE_OK);
         REQUIRE(http_code == 200);
         REQUIRE(body == v2::test_handler::body_content);
+    }
+    SECTION("Should return 404 on improper URI request") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/", http_code, body);
+
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 404);
+    }
+    SECTION("Should return 404 on unmatched endpoint within service") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v2/NOT_FOUND", http_code, body);
+
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 404);
+    }
+}
+
+TEST_CASE("Verify error handling", "[server]") {
+    std::random_device rd;
+    std::uniform_int_distribution<int> dist(9000, 12000);
+    int port = dist(rd);
+
+    CAPTURE(port);
+
+    serenity::http::server<serenity::http::policies::url::version> server(port);
+
+    server.get_resolver().add_service<v1::test_handler>({1});
+
+    server.run();
+    usleep(1000);
+
+    SECTION("Should return 500 status when exception thrown in handler") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/cause_exception", http_code, body);
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 500);
     }
 }
 

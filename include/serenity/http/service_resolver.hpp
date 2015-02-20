@@ -8,6 +8,15 @@
 
 namespace serenity { namespace http {
 
+    class service_not_found : public service {
+        public:
+           virtual bool handle(const request &, response &resp) override {
+               resp.status = 404;
+               resp.content = "";
+               return true;
+           } 
+    };
+
     template <class request_type, class response_type, typename policy_type>
     class service_resolver {
         public:
@@ -31,6 +40,7 @@ namespace serenity { namespace http {
         private:
             policy_type policies_;
             std::map<typename policy_type::key_type, std::unique_ptr<service>> services_;
+            service_not_found not_found_service_;
     };
 
     template <class request_type, class response_type, typename policy_type>
@@ -44,11 +54,9 @@ namespace serenity { namespace http {
                 req.uri = remaining;
                 return true;
             }
-            else {
-//                std::cerr << "[resolver] Not Found." << std::endl;
-            }
         }
-        return false;
+        svc = not_found_service_;
+        return true;
     }
     
 } /* http */ } /* serenity */

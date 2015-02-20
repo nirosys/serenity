@@ -21,7 +21,15 @@ namespace serenity { namespace http {
                 handler_key key = {method, uri};
                 auto search = handlers_.find(key);
                 if (search != handlers_.end()) {
-                    uint32_t ret = search->second(req, resp); // TODO: Do something with the return.
+                    try {
+                        uint32_t ret = search->second(req, resp); // TODO: Do something with the return.
+                    }
+                    catch (std::exception &e) {
+                        std::cerr << "Exception while running handler: " << method << "/" << uri << std::endl
+                                  << e.what() << std::endl;
+                        resp.status = 500;
+                        resp.content = "";
+                    }
                     return true;
                 }
                 resp.status = 404;

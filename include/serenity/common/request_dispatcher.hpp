@@ -38,6 +38,7 @@ namespace serenity { namespace common {
 
         if (service_resolver_.resolve(req, svc)) {
             if (!svc.handle(req, resp)) {
+                // TODO: Make this protocol agnostic.
                 resp.status = 500;
                 resp.content = "";
             }
