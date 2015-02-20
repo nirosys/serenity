@@ -29,25 +29,19 @@ namespace serenity { namespace common {
     {
         // NOTE: if the request does not specify a valid end-point then the
         //  resolver should return a handler that will generate a NOT FOUND,
-        //  or similar response.
-//        std::cerr << "[dispatcher] Dispatching..." << std::endl;
+        //  or similar response. Unless, it is desired that the connection be
+        //  severed immediately.
 
         typename service_resolver::service svc;
 
         request req = req_const;
 
         if (service_resolver_.resolve(req, svc)) {
-            if (!svc.handle(req, resp)) {
-                // TODO: Make this protocol agnostic.
-                resp.status = 500;
-                resp.content = "";
+            if (svc.handle(req, resp)) {
+                return true;
             }
         }
-        else {
-            //std::cerr << "[dispatcher] Not handling." << std::endl;
-        }
-
-        return true;
+        return false;
     }
     
 } /* common */ } /* serenity */
