@@ -109,16 +109,17 @@ TEST_CASE("Should parse incorrect requests correctly", "[request]") {
     SECTION("Should parse missing end-of-lines correctly") {
         serenity::http::request request;
         request.add_data(requests::incorrect_request_00, strlen(requests::incorrect_request_00));
-        request.parse();
 
+        REQUIRE(request.parse() == false);
         REQUIRE(request.is_error() == true);
     }
 
     SECTION("Should parse missing request contents") {
         serenity::http::request request;
         request.add_data(requests::incorrect_request_01, strlen(requests::incorrect_request_01));
-        request.parse();
 
+        REQUIRE(request.parse() == false);
         REQUIRE(request.is_error() == true);
     }
+
 }
