@@ -9,7 +9,6 @@ set(test_SRCS
       common.cc
       http_server.cc
       http_request.cc
-      #      http_request_handler.cc
       url_policy.cc
     )
 
@@ -18,16 +17,21 @@ include_directories(
     ../external/Catch/single_include
     )
 
-# Add test binary target
-add_executable(tests ${test_SRCS})
-target_link_libraries(tests curl ${Boost_LIBRARIES})
+if (NOT EXISTS "../external/Catch/single_include/catch.hpp")
+    message("Catch not found, not building unit tests. Run `git submodule update --init` to build tests.") 
+else()
+    # Add test binary target
+    add_executable(tests ${test_SRCS})
+    target_link_libraries(tests curl ${Boost_LIBRARIES})
 
-# JUnit Report Generation
-add_custom_target(test_report
-    COMMAND tests --reporter junit > unit_test_report.xml
-    )
+    # JUnit Report Generation
+    add_custom_target(test_report
+        COMMAND tests --reporter junit > unit_test_report.xml
+        )
 
-# Command-line Report Output... XML?... Ain't nobody got time fo dat!
-add_custom_target(run_tests
-    COMMAND tests --reporter console || true  # Stop build failure.. adds too much output..
-    )
+    # Command-line Report Output... XML?... Ain't nobody got time fo dat!
+    add_custom_target(run_tests
+        COMMAND tests --reporter console || true  # Stop build failure.. adds too much output..
+        )
+endif()
+
