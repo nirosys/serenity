@@ -93,7 +93,9 @@ TEST_CASE("Verify server creation", "[server]") {
     
     CAPTURE(port);
 
-    serenity::http::server<> server(port);
+    serenity::http::server<> server;
+
+    server.set_port(port);
 
     server.get_resolver().add_service<v1::test_handler>({});
 
@@ -155,7 +157,9 @@ TEST_CASE("Verify versioned service", "[server]") {
 
     CAPTURE(port);
 
-    serenity::http::server<serenity::http::policies::url::version> server(port);
+    serenity::http::server<serenity::http::policies::url::version> server;
+
+    server.set_port(port);
 
     server.get_resolver().add_service<v1::test_handler>({1});
     server.get_resolver().add_service<v2::test_handler>({2});

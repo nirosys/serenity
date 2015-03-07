@@ -4,6 +4,7 @@
 #include <functional>
 #include <boost/asio.hpp>
 #include <thread>
+#include <condition_variable>
 #include <memory>
 #include <iostream>
 
@@ -27,12 +28,16 @@ namespace serenity { namespace net {
             using manager = connection_manager<resolver>;
 
             server(const server &) = delete;
-            server(void) = delete;
 
             /** \brief Create a new server listening on all interfaces on
              *         the provided port.
              */
             server(uint32_t port); // Default 0.0.0.0
+
+            /** \brief Create a new server, listening on default port (8080) and
+             *         all IPv4 addresses available.
+             */
+            server(); // Default port 8080, IP 0.0.0.0
 
             ~server();
 
@@ -52,15 +57,22 @@ namespace serenity { namespace net {
              *         shut down. */
             void wait_to_end();
 
+            /** \brief Set the port that the server should listen on. (Default: 8080) */
+            void set_port(uint16_t port) { port_ = port; }
 
+            /** \brief Returns the current service resolver being used by the server. */
             resolver &get_resolver() { return service_resolver_; }
 
         private:
+            const uint16_t kDefaultPort = 8080;
+            uint16_t port_ = kDefaultPort;
             boost::asio::io_service io_service_;
             boost::asio::ip::tcp::acceptor acceptor_;
             boost::asio::ip::tcp::socket socket_;
             boost::asio::signal_set signals_;
             std::thread running_thread_;
+            std::mutex stop_mutex_;
+            std::condition_variable stop_condition_;
             bool is_running_;
 
             manager connection_manager_;
@@ -75,7 +87,7 @@ namespace serenity { namespace net {
     };
 
     template <class resolver_type>
-    server<resolver_type>::server(uint32_t port) :
+    server<resolver_type>::server() :
         io_service_(),
         signals_(io_service_),
         acceptor_(io_service_),
@@ -88,15 +100,12 @@ namespace serenity { namespace net {
         signals_.add(SIGQUIT);
 
         do_wait_stop();
+    }
 
-        boost::asio::ip::tcp::resolver resolver(io_service_);
-        boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port);
-        acceptor_.open(endpoint.protocol());
-        acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-        acceptor_.bind(endpoint);
-        acceptor_.listen();
-
-        do_accept();
+    template <class resolver_type>
+    server<resolver_type>::server(uint32_t port) : server()
+    {
+        port_ = port;
     }
 
     template <class resolver_type>
@@ -108,6 +117,18 @@ namespace serenity { namespace net {
 
     template <class resolver_type>
     void server<resolver_type>::run() {
+        boost::asio::ip::tcp::resolver resolver(io_service_);
+        boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port_);
+        acceptor_.open(endpoint.protocol());
+        acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+        acceptor_.bind(endpoint);
+        acceptor_.listen();
+
+        do_accept();
+
+        if (running_thread_.joinable()) // If we didn't cleanup properly.
+            running_thread_.join();
+
         is_running_ = true;
         running_thread_ = std::thread(
                 [this]() {
@@ -118,7 +139,9 @@ namespace serenity { namespace net {
 
     template <class resolver_type>
     void server<resolver_type>::wait_to_end() {
-        if (running_thread_.joinable())
+        std::unique_lock<std::mutex> lk(stop_mutex_);
+        stop_condition_.wait(lk, [this] { return !is_running_; });
+        if (running_thread_.joinable()) // wait_to_end will never be called from running_thread_
             running_thread_.join();
     }
 
@@ -126,9 +149,12 @@ namespace serenity { namespace net {
     void server<resolver_type>::stop() {
         acceptor_.close();
         if (is_running_) {
+            std::unique_lock<std::mutex> lk(stop_mutex_);
             io_service_.stop();
-            if (running_thread_.joinable())
+            if (running_thread_.get_id() != std::this_thread::get_id()) { // Stop *may* be called from running_thread_
                 running_thread_.join();
+            } // running_thread_ may never be joined if this is not the case..
+            stop_condition_.notify_one(); // Notify wait_to_end that we're done..
             is_running_ = false;
         }
     }

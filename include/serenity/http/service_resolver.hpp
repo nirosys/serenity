@@ -37,6 +37,11 @@ namespace serenity { namespace http {
 //                std::cerr << "[resolver] Adding" << std::endl;
             }
 
+            template <class service_type, typename... ctor_args>
+            void add_service(typename policy_type::key_type key, ctor_args... args) {
+                services_[key] = std::unique_ptr<service>(new service_type(args...));
+            }
+
         private:
             policy_type policies_;
             std::map<typename policy_type::key_type, std::unique_ptr<service>> services_;

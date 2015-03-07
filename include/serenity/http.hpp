@@ -18,6 +18,7 @@ namespace serenity { namespace http {
 #include "http/response.hpp"
 #include "http/service_resolver.hpp"
 #include "http/service.hpp"
+#include "http/file_service.hpp"
 #include "http/policies/url.hpp"
 
 namespace serenity {
