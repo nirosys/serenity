@@ -30,6 +30,15 @@ namespace tests {
                                 throw std::runtime_error("This is intended..");
                             }
                            );
+                    add_get("extra",
+                            [this](const serenity::http::request &req, serenity::http::response &res) -> uint32_t
+                            {
+                                res.status = 200;
+                                res.content = "{\"function\": \"" + req.function + "\", \"extra\": \"" + req.extra_path + "\" }";
+                                res.headers.push_back({"Content-type", "application/json"});
+                                return 0;
+                            }
+                           );
                 }
         };
         std::string test_handler::body_content = "{ \"test_status\": \"success\"; \"version\": 1; }";
@@ -244,6 +253,41 @@ TEST_CASE("Verify error handling", "[server]") {
         CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/cause_exception", http_code, body);
         REQUIRE(res == CURLE_OK);
         REQUIRE(http_code == 500);
+    }
+}
+
+TEST_CASE("Verify extra path parameters", "[server]") {
+    std::random_device rd;
+    std::uniform_int_distribution<int> dist(9000, 12000);
+    int port = dist(rd);
+
+    CAPTURE(port);
+
+    serenity::http::server<serenity::http::policies::url::version> server(port);
+
+    server.get_resolver().add_service<v1::test_handler>({1});
+
+    server.run();
+    usleep(1000);
+
+    SECTION("Should parse function name") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/extra", http_code, body);
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 200);
+        REQUIRE(body == "{\"function\": \"extra\", \"extra\": \"\" }");
+    }
+
+    SECTION("Should parse extra path parameters") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/extra/path/here", http_code, body);
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 200);
+        REQUIRE(body == "{\"function\": \"extra\", \"extra\": \"/path/here\" }");
     }
 }
 

@@ -29,6 +29,12 @@ namespace serenity { namespace http {
             /** \brief The requested URI, including parameters */
             std::string uri; // Convert to uri class from cpp-net
 
+            /** \brief The requested function name */
+            std::string function; // First token after the service resolution info.
+
+            /** \brief Extra URI arguments, path elements after the first token. */
+            std::string extra_path;
+
             /** \brief All of the HTTP headers provided by the client. */
             std::map<std::string, std::string> headers;
 

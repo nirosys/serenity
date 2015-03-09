@@ -8,6 +8,7 @@ namespace tests {
         extern const char *std_get_request;
         extern const char *std_get_versioned_request;
         extern const char *std_get_parameters;
+        extern const char *std_get_path_parameters;
 
         // POST
         extern const char *std_post_request;

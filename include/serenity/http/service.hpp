@@ -12,17 +12,28 @@ namespace serenity { namespace http {
         public:
             using handler_type = std::function<uint32_t(const request&, response&)>;
 
+            // TODO: DFA based lookup. This would allow for easy matching of 'function's and
+            //   allow for extra_path to be populated even if the function name is a multi-token
+            //   path element.
             virtual bool handle(const request &req, response &resp) override {
                 std::string method = req.method; // TODO: Make sure upcase.
                 std::string uri = req.uri;
 
                 if (uri[0] == '/') uri = uri.substr(1);
 
-                handler_key key = {method, uri};
+                std::string::size_type extra_start = uri.find_first_of('/');
+                std::string function = uri.substr(0, extra_start);
+
+                handler_key key = {method, function};
+                request req_tmp = req;
+                req_tmp.function = function;
+                if (extra_start != std::string::npos)
+                    req_tmp.extra_path = uri.substr(extra_start);
+
                 auto search = handlers_.find(key);
                 if (search != handlers_.end()) {
                     try {
-                        uint32_t ret = search->second(req, resp); // TODO: Do something with the return.
+                        uint32_t ret = search->second(req_tmp, resp); // TODO: Do something with the return.
                     }
                     catch (std::exception &e) {
                         std::cerr << "Exception while running handler: " << method << "/" << uri << std::endl
