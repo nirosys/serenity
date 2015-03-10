@@ -284,7 +284,7 @@ TEST_CASE("Verify extra path parameters", "[server]") {
         std::string body;
         long http_code = 0;
 
-        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/extra/path/here", http_code, body);
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/extra/path/here?foo=/bar", http_code, body);
         REQUIRE(res == CURLE_OK);
         REQUIRE(http_code == 200);
         REQUIRE(body == "{\"function\": \"extra\", \"extra\": \"/path/here\" }");
