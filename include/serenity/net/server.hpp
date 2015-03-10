@@ -33,6 +33,7 @@ namespace serenity { namespace net {
              *         the provided port.
              */
             server(uint32_t port); // Default 0.0.0.0
+            server(const std::string &address, uint32_t port);
 
             /** \brief Create a new server, listening on default port (8080) and
              *         all IPv4 addresses available.
@@ -60,12 +61,16 @@ namespace serenity { namespace net {
             /** \brief Set the port that the server should listen on. (Default: 8080) */
             void set_port(uint16_t port) { port_ = port; }
 
+            /** \brief Set the address to bind the server to. Can be IPv4 or IPv6. */
+            void set_address(const std::string &address) { address_ = address; }
+
             /** \brief Returns the current service resolver being used by the server. */
             resolver &get_resolver() { return service_resolver_; }
 
         private:
             const uint16_t kDefaultPort = 8080;
             uint16_t port_ = kDefaultPort;
+            std::string address_ = "0.0.0.0";
             boost::asio::io_service io_service_;
             boost::asio::ip::tcp::acceptor acceptor_;
             boost::asio::ip::tcp::socket socket_;
@@ -109,6 +114,14 @@ namespace serenity { namespace net {
     }
 
     template <class resolver_type>
+    server<resolver_type>::server(const std::string &address, uint32_t port)
+       : server()
+    {
+        port_ = port;
+        address_ = address;
+    }
+
+    template <class resolver_type>
     server<resolver_type>::~server() {
         if (is_running_) {
             stop();
@@ -117,8 +130,10 @@ namespace serenity { namespace net {
 
     template <class resolver_type>
     void server<resolver_type>::run() {
+        boost::asio::ip::address address = boost::asio::ip::address::from_string(address_);
         boost::asio::ip::tcp::resolver resolver(io_service_);
-        boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port_);
+        boost::asio::ip::tcp::endpoint endpoint(address, port_);
+
         acceptor_.open(endpoint.protocol());
         acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
         acceptor_.bind(endpoint);

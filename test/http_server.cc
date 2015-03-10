@@ -291,4 +291,69 @@ TEST_CASE("Verify extra path parameters", "[server]") {
     }
 }
 
+TEST_CASE("Verify listening on specific IP addresses (IPv6)", "[server]") {
+    std::random_device rd;
+    std::uniform_int_distribution<int> dist(9000, 12000);
+    int port = dist(rd);
+
+    CAPTURE(port);
+
+    serenity::http::server<serenity::http::policies::url::version> server("::1", port);
+
+    server.get_resolver().add_service<v1::test_handler>({1});
+
+    server.run();
+    usleep(1000);
+
+    SECTION("Should not connect to localhost (IPv4)") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/testresult", http_code, body);
+        REQUIRE(res == CURLE_COULDNT_CONNECT);
+    }
+
+    SECTION("Should connect to localhost (IPv6)") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://[::1]:" + std::to_string(port) + "/v1/testresult", http_code, body);
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 200);
+    }
+
+}
+
+TEST_CASE("Verify listening on specific IP addresses (IPv4)", "[server]") {
+    std::random_device rd;
+    std::uniform_int_distribution<int> dist(9000, 12000);
+    int port = dist(rd);
+
+    CAPTURE(port);
+
+    serenity::http::server<serenity::http::policies::url::version> server(port);
+    server.set_address("127.0.0.1");
+
+    server.get_resolver().add_service<v1::test_handler>({1});
+
+    server.run();
+    usleep(1000);
+
+    SECTION("Should connect to localhost (IPv4)") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://127.0.0.1:" + std::to_string(port) + "/v1/testresult", http_code, body);
+        REQUIRE(res == CURLE_OK);
+        REQUIRE(http_code == 200);
+    }
+
+    SECTION("Should not connect to localhost (IPv6)") {
+        std::string body;
+        long http_code = 0;
+
+        CURLcode res = fetch_url("http://[::1]:" + std::to_string(port) + "/v1/testresult", http_code, body);
+        REQUIRE(res == CURLE_COULDNT_CONNECT);
+    }
+}
 }
