@@ -32,12 +32,12 @@ namespace serenity { namespace common {
         //  or similar response. Unless, it is desired that the connection be
         //  severed immediately.
 
-        typename service_resolver::service svc;
+        typename service_resolver::service *svc;
 
         request req = req_const;
 
         if (service_resolver_.resolve(req, svc)) {
-            if (svc.handle(req, resp)) {
+            if (svc->handle(req, resp)) {
                 return true;
             }
         }
@@ -45,6 +45,5 @@ namespace serenity { namespace common {
     }
     
 } /* common */ } /* serenity */
-
 
 #endif /* end of include guard: SERENITY_COMMON_REQUEST_DISPATCHER_HPP__ */

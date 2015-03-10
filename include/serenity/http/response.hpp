@@ -39,12 +39,15 @@ namespace serenity { namespace http {
             }
 
             /** \brief Creates a string representation for the provided status code. */
-            const std::string &get_status_line(uint32_t status) {
+            const std::string get_status_line(uint32_t status) {
                 switch (status) {
+                    case 200: return ok; break;
                     case 400: return bad_request; break;
                     case 404: return not_found; break;
                     case 500: return internal_error; break;
-                    default: return ok; break;
+                    default:
+                              return "HTTP/1.0 " + std::to_string(status) + " Unknown Response\r\n";
+                              break;
                 }
             }
 

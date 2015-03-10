@@ -29,12 +29,11 @@ namespace serenity { namespace http {
 
             service_resolver() {}
 
-            bool resolve(request_type &, service &);
+            bool resolve(request_type &, service *&);
 
             template <class service_type>
             void add_service(typename policy_type::key_type key) {
                 services_[key] = std::unique_ptr<service>(new service_type());
-//                std::cerr << "[resolver] Adding" << std::endl;
             }
 
             template <class service_type, typename... ctor_args>
@@ -49,18 +48,18 @@ namespace serenity { namespace http {
     };
 
     template <class request_type, class response_type, typename policy_type>
-    bool service_resolver<request_type, response_type, policy_type>::resolve(request_type &req, service &svc)
+    bool service_resolver<request_type, response_type, policy_type>::resolve(request_type &req, service *&svc)
     {
         std::string remaining;
         if (policies_.apply(req.uri, remaining)) {
             auto search = services_.find(policies_.values);
             if (search != services_.end()) {
-                svc = *(search->second);
+                svc = &*(search->second);
                 req.uri = remaining;
                 return true;
             }
         }
-        svc = not_found_service_;
+        svc = &not_found_service_;
         return true;
     }
     
