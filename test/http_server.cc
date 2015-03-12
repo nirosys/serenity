@@ -170,8 +170,8 @@ TEST_CASE("Verify versioned service", "[server]") {
 
     server.set_port(port);
 
-    server.get_resolver().add_service<v1::test_handler>({1});
-    server.get_resolver().add_service<v2::test_handler>({2});
+    server.get_resolver().add_service<v1::test_handler>(std::make_tuple<int>(1));
+    server.get_resolver().add_service<v2::test_handler>(std::make_tuple<int>(2));
 
     server.run();
     usleep(1000);
@@ -241,7 +241,7 @@ TEST_CASE("Verify error handling", "[server]") {
 
     serenity::http::server<serenity::http::policies::url::version> server(port);
 
-    server.get_resolver().add_service<v1::test_handler>({1});
+    server.get_resolver().add_service<v1::test_handler>(std::make_tuple<int>(1));
 
     server.run();
     usleep(1000);
@@ -265,7 +265,7 @@ TEST_CASE("Verify extra path parameters", "[server]") {
 
     serenity::http::server<serenity::http::policies::url::version> server(port);
 
-    server.get_resolver().add_service<v1::test_handler>({1});
+    server.get_resolver().add_service<v1::test_handler>(std::make_tuple(1));
 
     server.run();
     usleep(1000);
@@ -300,7 +300,7 @@ TEST_CASE("Verify listening on specific IP addresses (IPv6)", "[server]") {
 
     serenity::http::server<serenity::http::policies::url::version> server("::1", port);
 
-    server.get_resolver().add_service<v1::test_handler>({1});
+    server.get_resolver().add_service<v1::test_handler>(std::make_tuple<int>(1));
 
     server.run();
     usleep(1000);
@@ -334,7 +334,7 @@ TEST_CASE("Verify listening on specific IP addresses (IPv4)", "[server]") {
     serenity::http::server<serenity::http::policies::url::version> server(port);
     server.set_address("127.0.0.1");
 
-    server.get_resolver().add_service<v1::test_handler>({1});
+    server.get_resolver().add_service<v1::test_handler>(std::make_tuple<int>(1));
 
     server.run();
     usleep(1000);

@@ -11,7 +11,7 @@ int main( int argc, char **argv ) {
 
     std::cout << "Starting server on port " << gPort << std::endl;
 
-    server.get_resolver().add_service<basic_service>({"basic", 1});
+    server.get_resolver().add_service<basic_service>(std::make_tuple<std::string,int>("basic", 1));
 
     server.run();
 

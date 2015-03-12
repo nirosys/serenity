@@ -21,8 +21,8 @@ int main( int argc, char **argv ) {
     std::cout << "Starting server on port " << gPort << std::endl;
     std::cout << "Using webroot: " << root_dir << std::endl;
 
-    server.get_resolver().add_service<serenity::http::file_service>({"files", 1}, root_dir);
-    server.get_resolver().add_service<examples::monitor_service>({"monitor", 1});
+    server.get_resolver().add_service<serenity::http::file_service>(std::make_tuple<std::string,int>("files", 1), root_dir);
+    server.get_resolver().add_service<examples::monitor_service>(std::make_tuple<std::string,int>("monitor", 1));
 
     server.run();
 

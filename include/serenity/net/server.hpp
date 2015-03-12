@@ -23,7 +23,7 @@ namespace serenity { namespace net {
             using resolver = resolver_type;
             using request = typename resolver_type::request;
             using response = typename resolver_type::request;
-            using connection = connection<resolver>;
+            using connection = net::connection<resolver>;
             using dispatcher = typename connection::dispatcher; 
             using manager = connection_manager<resolver>;
 

@@ -22,7 +22,7 @@ namespace serenity { namespace http {
         public:
             using request = request_type;
             using response = response_type;
-            using service = service;
+            using service = http::service;
             using handler = typename common::service_resolver<request_type, response_type>::handler;
             service_resolver(const service_resolver &) = delete;
             service_resolver &operator=(const service_resolver &) = delete;
