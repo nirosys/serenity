@@ -34,7 +34,7 @@ endif()
 
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.56.0 REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.46.0 REQUIRED COMPONENTS system filesystem)
 
 include_directories(include ${Boost_INCLUDE_DIRS})
 
