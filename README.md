@@ -7,6 +7,8 @@
         \/     \/            \/     \/          \/     
 
 
+[![Build Status](https://travis-ci.org/nirosys/serenity.svg?branch=master)](https://travis-ci.org/nirosys/serenity)
+
 # Serenity
 A library for creating RESTful services in C++11 and beyond.
 
@@ -17,8 +19,8 @@ services that expose REST APIs to clients.
 
 ## TODO
 
-    * File Handler
-    * Extra URI parts as arguments
+    * Client Library
+    * JSON Parser and Generator
 
 
 ## Usage
