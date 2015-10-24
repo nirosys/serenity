@@ -78,7 +78,7 @@ namespace serenity { namespace net {
             std::thread running_thread_;
             std::mutex stop_mutex_;
             std::condition_variable stop_condition_;
-            bool is_running_;
+            bool is_running_ = false;
 
             manager connection_manager_;
             resolver service_resolver_;
@@ -162,7 +162,8 @@ namespace serenity { namespace net {
 
     template <class resolver_type>
     void server<resolver_type>::stop() {
-        acceptor_.close();
+        if (acceptor_.is_open())
+            acceptor_.close();
         if (is_running_) {
             std::unique_lock<std::mutex> lk(stop_mutex_);
             io_service_.stop();
