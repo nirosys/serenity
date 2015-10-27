@@ -175,7 +175,6 @@ namespace serenity { namespace http {
                             if (!set_error( (*p < '0' || *p > '9') && (*p != '\r') )) {
                                 if ('\r' == *p) {
                                     version_minor = std::stol(std::string(token_start, p - token_start));
-                                    state = parser_state::header_name;
                                     token_start = p + 2; // Move past "\r\n"
 
                                     next_state = parser_state::header_name;
