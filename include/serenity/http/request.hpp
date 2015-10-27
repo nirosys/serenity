@@ -249,9 +249,9 @@ namespace serenity { namespace http {
             };
             std::array<char, 4096> data_;
             std::size_t data_end_ = 0;
-            unsigned int parse_state_;
-            bool is_complete_;
-            bool is_error_;
+            unsigned int parse_state_ = 0;
+            bool is_complete_ = false;
+            bool is_error_ = false;
 
             inline bool set_error(bool is_error) { return (is_error_ = is_error); }
             bool identifier_char(char c) {
