@@ -48,7 +48,7 @@ namespace serenity { namespace http {
             uint8_t version_minor;
 
             /** \brief Raw bytes of the extra data provided by the client in the request */
-            std::string post_data;
+            std::string post_data = "";;
 
             /** \brief Add data to the request for parsing. */
             void add_data(const char *request_data, std::size_t bytes) {
@@ -56,6 +56,13 @@ namespace serenity { namespace http {
                 //    << request_data << std::endl;
                 memcpy(data_.data() + data_end_, request_data, bytes);
                 data_end_ += bytes;
+                data_ptr_ = (data_.data() + data_end_) - bytes;
+
+                if (headers_complete_)  {
+                    // If we're done with the headers, go straight to parse()
+                    parse();
+                    return;
+                }
 
                 int i = 0;
                 for (; (i < bytes) && (parse_state_ < post_end); ++i) {
@@ -75,8 +82,8 @@ namespace serenity { namespace http {
                             break;
                     }
                 }
-                is_complete_ = (parse_state_ >= crlf_02_end);
-                if (is_complete_) {
+                headers_complete_ = (parse_state_ >= crlf_02_end);
+                if (headers_complete_) {
                     parse();
                 }
             }
@@ -91,16 +98,15 @@ namespace serenity { namespace http {
 
             /** \brief Parses the provided data as an HTTP request, and populates the current object. */
             bool parse() {
-                parser_state state = parser_state::start;
                 parser_state next_state = parser_state::start;
                 char const *token_start = nullptr;
                 std::string variable;
                 std::string value;
-                for (const char *p = data_.data(); (p - data_.data()) < data_end_; ++p) {
-                    switch (state) {
+                for (const char *p = data_ptr_; (p - data_.data()) < data_end_; ++p) {
+                    switch (parser_state_) {
                         case parser_state::start:
                             if (!set_error( (*p < 'A' || *p > 'Z') )) {
-                                state = parser_state::method;
+                                parser_state_ = parser_state::method;
                                 token_start = p;
                             }
                             break;
@@ -108,7 +114,7 @@ namespace serenity { namespace http {
                             if (!set_error( (*p < 'A' || *p > 'Z') && *p != ' ' )) {
                                 if (*p == ' ') {
                                     method = std::string(token_start, p - token_start);
-                                    state = parser_state::uri;
+                                    parser_state_ = parser_state::uri;
                                     token_start = p + 1; // +1 to move past ' '.
                                     //std::cerr << "[parse] Method: " << method << std::endl;
                                 }
@@ -118,13 +124,13 @@ namespace serenity { namespace http {
                             if (!set_error( (*p < 32 || *p > 126) )) { // Accept all printables.
                                 if (*p == '?') { // End of URI, start of params
                                     uri = decode_url(std::string(token_start, p - token_start));
-                                    state = parser_state::uri_parameters;
+                                    parser_state_ = parser_state::uri_parameters;
                                     token_start = p + 1; // Move past '?'
                                     //std::cerr << "[parse] URI: " << uri << std::endl;
                                 }
                                 else if (*p == ' ') { // End of URI, start of version
                                     uri = decode_url(std::string(token_start, p - token_start));
-                                    state = parser_state::http_version_HTTP;
+                                    parser_state_ = parser_state::http_version_HTTP;
                                     //std::cerr << "[parse] URI: " << uri << std::endl;
                                 }
                             }
@@ -143,19 +149,19 @@ namespace serenity { namespace http {
                                 //std::cerr << "[parse] param: " << variable << " = " << value << std::endl;
 
                                 if (*p == ' ')
-                                    state = parser_state::http_version_HTTP;
+                                    parser_state_ = parser_state::http_version_HTTP;
 
                                 token_start = p + 1; // Move beyond '&'
                             }
                             else if (*p == '\r' || *p == '\n')
-                                state = parser_state::error;
+                                parser_state_ = parser_state::error;
                             break;
                         case parser_state::http_version_HTTP:
                             //std::cerr << "[parse] parsing HTTP: " << *p << std::endl;
                             // TODO: Proper HTTP sequence should be determined.
                             if (!set_error( (*p != 'H' && *p != 'T' && *p != 'P') && *p != '/')) {
                                 if (*p == '/') {
-                                    state = parser_state::http_version_major;
+                                    parser_state_ = parser_state::http_version_major;
                                     token_start = p + 1; // +1 to move past '/'
                                 }
                             }
@@ -165,7 +171,7 @@ namespace serenity { namespace http {
                             if (!set_error( (*p < '0' || *p > '9') && (*p != '.') )) {
                                 if ('.' == *p) {
                                     version_major = std::stol(std::string(token_start, p - token_start));
-                                    state = parser_state::http_version_minor;
+                                    parser_state_ = parser_state::http_version_minor;
                                     token_start = p + 1; // +1 to move past '.'
                                 }
                             }
@@ -178,20 +184,21 @@ namespace serenity { namespace http {
                                     token_start = p + 2; // Move past "\r\n"
 
                                     next_state = parser_state::header_name;
-                                    state = parser_state::end_of_line;
+                                    parser_state_ = parser_state::end_of_line;
                                 }
                             }
                             break;
                         case parser_state::header_name:
                             if (*p == '\r') {
-                                state = parser_state::end_of_line;
+                                parser_state_ = parser_state::end_of_line;
                                 next_state = parser_state::post_data;
+                                post_data_start_ptr_ = p + 2; // move past \r\n
                             }
                             else if (!set_error(!identifier_char(*p))) {
                                 if (*p == ':') {
                                     variable = std::string(token_start, p - token_start);
                                     token_start = p + 2; // Move past ": "
-                                    state = parser_state::header_value;
+                                    parser_state_ = parser_state::header_value;
                                 }
                             }
                             break;
@@ -199,7 +206,7 @@ namespace serenity { namespace http {
                             if (*p == '\r') {
                                 value = std::string(token_start, p - token_start);
                                 next_state = parser_state::header_name;
-                                state = parser_state::end_of_line;
+                                parser_state_ = parser_state::end_of_line;
 
                                 token_start = p + 2; // Move past "\r\n"
                                 headers[variable] = value;
@@ -210,7 +217,7 @@ namespace serenity { namespace http {
                             //std::cerr << "[parser] parsing end of line: " << *p << std::endl;
                             if (!set_error( *p != '\n' )) {
                                 //std::cerr << "[parser] EOL parsed" << std::endl;
-                                state = next_state;
+                                parser_state_ = next_state;
                                 token_start = p + 1; // Move past '\n'
                             }
                             break;
@@ -219,14 +226,25 @@ namespace serenity { namespace http {
                     }
                     if (is_error_) {
                         //std::cerr << "[parse] ERROR - previous state: " << as_integer(state) << std::endl;
-                        state = parser_state::error;
+                        parser_state_ = parser_state::error;
                         break;
                     }
                 }
-                if (state == parser_state::post_data) {
-                    post_data = std::string(token_start, data_end_ - (token_start - data_.data()));
+                if (parser_state_ == parser_state::post_data && 
+                        headers.find("Content-Length") != headers.end()) {
+                    // This variable is for debugging puposes.
+                    uint32_t content_length = 
+                        strtoul(headers["Content-Length"].c_str(), NULL, 0);
+                    if (data_end_ >= content_length) {
+                        post_data += std::string(post_data_start_ptr_, data_end_);
+                        is_complete_ = true;
+                    }
                 }
-                data_end_ = 0;
+                else {
+                    is_complete_ = true;
+                    data_end_ = 0;
+                }
+
                 return !is_error_;
             }
 
@@ -246,11 +264,18 @@ namespace serenity { namespace http {
                 error,
                 end_of_line
             };
-            std::array<char, 4096> data_;
+
+            // TODO:  Make this dynamic without the potential for uploading
+            // huge files.
+            std::array<char, 65535> data_;
+            char *data_ptr_ = data_.data();
+            const char *post_data_start_ptr_ = nullptr;
             std::size_t data_end_ = 0;
             unsigned int parse_state_ = 0;
             bool is_complete_ = false;
+            bool headers_complete_ = false;
             bool is_error_ = false;
+            parser_state parser_state_ = parser_state::start;
 
             inline bool set_error(bool is_error) { return (is_error_ = is_error); }
             bool identifier_char(char c) {
