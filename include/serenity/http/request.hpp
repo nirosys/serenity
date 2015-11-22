@@ -236,7 +236,7 @@ namespace serenity { namespace http {
                     uint32_t content_length = 
                         strtoul(headers["Content-Length"].c_str(), NULL, 0);
                     if (data_end_ >= content_length) {
-                        post_data += std::string(post_data_start_ptr_, data_end_);
+                        post_data += std::string(post_data_start_ptr_, content_length);
                         is_complete_ = true;
                     }
                 }
