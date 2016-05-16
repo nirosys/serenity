@@ -267,7 +267,7 @@ namespace serenity { namespace http {
 
             // TODO:  Make this dynamic without the potential for uploading
             // huge files.
-            std::array<char, 1e6> data_;
+            std::array<char, 1000000> data_;
             char *data_ptr_ = data_.data();
             const char *post_data_start_ptr_ = nullptr;
             std::size_t data_end_ = 0;
