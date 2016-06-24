@@ -24,16 +24,16 @@ namespace serenity { namespace http {
     class request {
         public:
             /** \brief Method used for request: GET, PUT, DELETE, etc. */
-            std::string method;
+            std::string method = "";
 
             /** \brief The requested URI, including parameters */
-            std::string uri; // Convert to uri class from cpp-net
+            std::string uri = ""; // Convert to uri class from cpp-net
 
             /** \brief The requested function name */
-            std::string function; // First token after the service resolution info.
+            std::string function = ""; // First token after the service resolution info.
 
             /** \brief Extra URI arguments, path elements after the first token. */
-            std::string extra_path;
+            std::string extra_path = "";
 
             /** \brief All of the HTTP headers provided by the client. */
             std::map<std::string, std::string> headers;
@@ -42,13 +42,13 @@ namespace serenity { namespace http {
             std::map<std::string, std::string> parameters;
 
             /** \brief Major HTTP version (ie 1) */
-            uint8_t version_major;
+            uint8_t version_major = 0;
 
             /** \brief Minor HTTP version (ie 0) */
-            uint8_t version_minor;
+            uint8_t version_minor = 0;
 
             /** \brief Raw bytes of the extra data provided by the client in the request */
-            std::string post_data = "";;
+            std::string post_data = "";
 
             /** \brief Add data to the request for parsing. */
             void add_data(const char *request_data, std::size_t bytes) {
@@ -193,6 +193,8 @@ namespace serenity { namespace http {
                                 parser_state_ = parser_state::end_of_line;
                                 next_state = parser_state::post_data;
                                 post_data_start_ptr_ = p + 2; // move past \r\n
+                                post_data.clear();
+                                header_length_ = post_data_start_ptr_ - data_ptr_;
                             }
                             else if (!set_error(!identifier_char(*p))) {
                                 if (*p == ':') {
@@ -230,13 +232,13 @@ namespace serenity { namespace http {
                         break;
                     }
                 }
-                if (parser_state_ == parser_state::post_data && 
+                if (!is_complete_ && parser_state_ == parser_state::post_data && 
                         headers.find("Content-Length") != headers.end()) {
                     // This variable is for debugging puposes.
                     uint32_t content_length = 
                         strtoul(headers["Content-Length"].c_str(), NULL, 0);
-                    if (data_end_ >= content_length) {
-                        post_data += std::string(post_data_start_ptr_, content_length);
+                    if (data_end_ - header_length_ >= content_length) {
+                        post_data = std::string(post_data_start_ptr_, content_length);
                         is_complete_ = true;
                     }
                 }
@@ -271,6 +273,7 @@ namespace serenity { namespace http {
             char *data_ptr_ = data_.data();
             const char *post_data_start_ptr_ = nullptr;
             std::size_t data_end_ = 0;
+            std::size_t header_length_ = 0;
             unsigned int parse_state_ = 0;
             bool is_complete_ = false;
             bool headers_complete_ = false;
