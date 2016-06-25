@@ -92,9 +92,8 @@ namespace serenity { namespace net {
                     if (!ec) {
                         request_.add_data(buffer_.data(), bytes);
                         if (request_.is_complete()) {
-                            response resp;
-                            if (request_dispatcher_.dispatch(request_, resp)) {
-                                do_write(resp.to_buffers());
+                            if (request_dispatcher_.dispatch(request_, response_)) {
+                                do_write(response_.to_buffers());
                             //std::cerr << "Finished request successfully." << std::endl;
                             }
                             else {
@@ -125,8 +124,13 @@ namespace serenity { namespace net {
         boost::asio::async_write(socket_, buffers,
                 [this, self](boost::system::error_code ec, std::size_t size)
                 {
-                    if (ec != boost::asio::error::operation_aborted) {
+                    if (ec == 0) {
                         connection_manager_.stop(this->shared_from_this());
+                    }
+                    else  {
+                        std::cerr << "Error writing data: " <<  ec.message() << std::endl;
+                        if (ec != boost::asio::error::operation_aborted)
+                            connection_manager_.stop(this->shared_from_this());
                     }
                 }
         );

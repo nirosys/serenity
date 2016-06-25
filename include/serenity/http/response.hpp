@@ -63,7 +63,7 @@ namespace serenity { namespace http {
             std::string bad_request = "HTTP/1.0 400 Bad Request\r\n";
             std::string not_found = "HTTP/1.0 404 Not Found\r\n";
             std::string internal_error = "HTTP/1.0 500 Internal Server Error\r\n";
-            std::string response_str;
+            std::string response_str = "";
     };
 
 } /* http */ } /* serenity */
