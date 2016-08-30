@@ -14,6 +14,7 @@ namespace serenity { namespace http {
     const unsigned int crlf_02_start = 3;
     const unsigned int crlf_02_end = 4;
     const unsigned int post_end = 5;
+    const uint32_t initial_data_sz = 128000;
 
     template <typename Enumeration>
     auto as_integer(Enumeration const value) -> typename std::underlying_type<Enumeration>::type
@@ -23,6 +24,8 @@ namespace serenity { namespace http {
 
     class request {
         public:
+            request() { data_ = (char *)malloc(initial_data_sz); }
+            //~request() { if (data_) free(data_); }
             /** \brief Method used for request: GET, PUT, DELETE, etc. */
             std::string method = "";
 
@@ -54,9 +57,12 @@ namespace serenity { namespace http {
             void add_data(const char *request_data, std::size_t bytes) {
                 //std::cerr << "Data (" << bytes << "):" << std::endl
                 //    << request_data << std::endl;
-                memcpy(data_.data() + data_end_, request_data, bytes);
+                if ((data_end_ + bytes) > data_sz_) {
+                    data_ = (char *)realloc(data_, data_end_ + bytes + 1);
+                }
+                memcpy(data_ + data_end_, request_data, bytes);
                 data_end_ += bytes;
-                data_ptr_ = (data_.data() + data_end_) - bytes;
+                data_ptr_ = (data_ + data_end_) - bytes;
 
                 if (headers_complete_)  {
                     // If we're done with the headers, go straight to parse()
@@ -102,7 +108,7 @@ namespace serenity { namespace http {
                 char const *token_start = nullptr;
                 std::string variable;
                 std::string value;
-                for (const char *p = data_ptr_; (p - data_.data()) < data_end_; ++p) {
+                for (const char *p = data_ptr_; (p - data_) < data_end_; ++p) {
                     switch (parser_state_) {
                         case parser_state::start:
                             if (!set_error( (*p < 'A' || *p > 'Z') )) {
@@ -192,9 +198,10 @@ namespace serenity { namespace http {
                             if (*p == '\r') {
                                 parser_state_ = parser_state::end_of_line;
                                 next_state = parser_state::post_data;
-                                post_data_start_ptr_ = p + 2; // move past \r\n
+                                //post_data_start_ptr_ = p + 2; // move past \r\n
+                                post_data_start_offset_ = (p - data_) + 2;
                                 post_data.clear();
-                                header_length_ = post_data_start_ptr_ - data_ptr_;
+                                header_length_ = &data_[post_data_start_offset_] - data_ptr_;
                             }
                             else if (!set_error(!identifier_char(*p))) {
                                 if (*p == ':') {
@@ -238,7 +245,7 @@ namespace serenity { namespace http {
                     uint32_t content_length = 
                         strtoul(headers["Content-Length"].c_str(), NULL, 0);
                     if (data_end_ - header_length_ >= content_length) {
-                        post_data = std::string(post_data_start_ptr_, content_length);
+                        post_data = std::string(&data_[post_data_start_offset_], content_length);
                         is_complete_ = true;
                     }
                 }
@@ -269,11 +276,14 @@ namespace serenity { namespace http {
 
             // TODO:  Make this dynamic without the potential for uploading
             // huge files.
-            std::array<char, 1000000> data_;
-            char *data_ptr_ = data_.data();
-            const char *post_data_start_ptr_ = nullptr;
+            //std::array<char, 2000000> data_;
+            char *data_ = nullptr;
+            char *data_ptr_ = data_;
+            //const char *post_data_start_ptr_ = nullptr;
+            std::size_t post_data_start_offset_ = 0;
             std::size_t data_end_ = 0;
             std::size_t header_length_ = 0;
+            std::size_t data_sz_ = initial_data_sz;
             unsigned int parse_state_ = 0;
             bool is_complete_ = false;
             bool headers_complete_ = false;
