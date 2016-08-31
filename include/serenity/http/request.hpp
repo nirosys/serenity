@@ -25,7 +25,7 @@ namespace serenity { namespace http {
     class request {
         public:
             request() { data_ = (char *)malloc(initial_data_sz); }
-            //~request() { if (data_) free(data_); }
+            ~request() { if (data_) free(data_); }
             /** \brief Method used for request: GET, PUT, DELETE, etc. */
             std::string method = "";
 
