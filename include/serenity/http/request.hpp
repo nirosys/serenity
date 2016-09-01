@@ -25,7 +25,32 @@ namespace serenity { namespace http {
     class request {
         public:
             request() { data_ = (char *)malloc(initial_data_sz); }
-            ~request() { if (data_) free(data_); }
+            ~request() { if (data_) { free(data_); data_ = nullptr; } }
+
+            request(const request &r) {
+                data_ = nullptr;
+                data_ptr_ = data_;
+                post_data_start_offset_ = 0;
+                data_end_ = 0;
+                header_length_ = 0;
+                data_sz_ = initial_data_sz;
+                parse_state_ = 0;
+                is_complete_ = false;
+                headers_complete_ = false;
+                is_error_ = false;
+                parser_state_ = parser_state::start;
+
+                method = r.method;
+                uri = r.uri;
+                function = r.function;
+                extra_path = r.extra_path;
+                headers = r.headers;
+                parameters = r.parameters;
+                version_major = r.version_major;
+                version_minor = r.version_minor;
+                post_data = r.post_data;
+            }
+
             /** \brief Method used for request: GET, PUT, DELETE, etc. */
             std::string method = "";
 
@@ -319,6 +344,8 @@ namespace serenity { namespace http {
                 }
                 return decoded;
             }
+
+            void operator =(const request &o) = delete;
     };
     
 } /* http */ } /* serenity */
