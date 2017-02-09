@@ -335,6 +335,8 @@ namespace serenity { namespace http {
                             in_hex = false;
                             char c = std::strtol(hex, nullptr, 16);
                             decoded += c;
+                            // Must reset hex here because there might be multiple hex encoded values in the same string
+                            hex[0] = 0;
                         }
                     }
                     else if (str[i] != '%')
