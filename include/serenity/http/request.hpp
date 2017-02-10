@@ -167,22 +167,24 @@ namespace serenity { namespace http {
                             }
                             break;
                         case parser_state::uri_parameters:
-                            if (*p == '=') {
+                            if (*p == '=' || (strncasecmp(p, "%3d", 3) == 0)) {
                                 variable = decode_url(std::string(token_start, p - token_start));
-                                token_start = p + 1; // Move beyond '='
+                                if (*p == '%') token_start = p + 3;
+                                else token_start = p + 1; // Move beyond '='
                             }
-                            else if (*p == '&' || *p == ' ') {
+                            else if (*p == '&' || *p == ' ' || (strncmp(p, "%26", 3) == 0)) {
                                 value = decode_url(std::string(token_start, p - token_start));
                                 if (variable.size() > 0)
                                     parameters[variable] = value;
                                 else if (value.size() > 0)
                                     parameters[value] = "";
-                                //std::cerr << "[parse] param: " << variable << " = " << value << std::endl;
+                                std::cerr << "[parse] param: " << variable << " = " << value << std::endl;
 
                                 if (*p == ' ')
                                     parser_state_ = parser_state::http_version_HTTP;
 
-                                token_start = p + 1; // Move beyond '&'
+                                if (*p == '%') token_start = p + 3;
+                                else token_start = p + 1; // Move beyond '&'
                             }
                             else if (*p == '\r' || *p == '\n')
                                 parser_state_ = parser_state::error;
