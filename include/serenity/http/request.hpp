@@ -178,7 +178,7 @@ namespace serenity { namespace http {
                                     parameters[variable] = value;
                                 else if (value.size() > 0)
                                     parameters[value] = "";
-                                std::cerr << "[parse] param: " << variable << " = " << value << std::endl;
+                                //std::cerr << "[parse] param: " << variable << " = " << value << std::endl;
 
                                 if (*p == ' ')
                                     parser_state_ = parser_state::http_version_HTTP;
