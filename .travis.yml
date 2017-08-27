@@ -17,7 +17,7 @@ install:
     - ./bootstrap.sh --prefix=/usr/local --with-libraries=system,thread,date_time,regex,serialization,filesystem
     - ./b2 clean
     - ./b2 toolset=clang cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++" --prefix=/usr/local -j 4
-    - sudo ./b2 install toolset=clang cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++" prefix=/usr/local >/dev/null
+    - sudo ./b2 install >/dev/null
     - cd ..
 before_script:
     - mkdir -p build
