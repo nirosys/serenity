@@ -53,6 +53,7 @@ namespace requests {
           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.99 Safari/537.36\r\n"
         "Accept-Encoding: gzip, deflate, sdch\r\n"
         "Accept-Language: en-US,en;q=0.8\r\n"
+        "Content-Length: 27\r\n"
         "\r\n"
         "{\"post_data\": \"DataData\"; }";
 
