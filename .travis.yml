@@ -2,7 +2,6 @@ language: c++
 dist: trusty
 compiler:
     - clang
-      #- gcc
 os:
     - linux
 before_install:
@@ -22,6 +21,6 @@ before_script:
     - mkdir -p build
     - cd build
 script:
-    - BOOSTROOT=`pwd`/boost_1_65_0 cmake ..
+    - cmake ..
     - make
     - make run_tests
