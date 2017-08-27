@@ -1,7 +1,7 @@
 language: c++
 dist: trusty
 compiler:
-    - clang
+    - clang++
 os:
     - linux
 before_install:
