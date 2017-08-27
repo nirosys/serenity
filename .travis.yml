@@ -5,22 +5,9 @@ compiler:
     - gcc
 os:
     - linux
-    - osx
 before_install:
-    # g++4.8.1
-    #- if [ "$CXX" == "g++" ]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; fi
-    # clang 3.4
-    #- if [ "$CXX" == "clang++" ]; then sudo add-apt-repository -y ppa:h-rayflood/llvm; fi
-    #- sudo add-apt-repository -y ppa:boost-latest/ppa
     - sudo apt-get update
 install:
-    # g++4.8.1
-    #- if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
-    #- if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
-
-      # clang 3.4
-      #- if [ "$CXX" == "clang++" ]; then sudo apt-get install --allow-unauthenticated -qq clang-3.4; fi
-      #- if [ "$CXX" == "clang++" ]; then export CXX="clang++-3.4"; fi
     - sudo apt-get install libboost1.55-dev libboost-system1.55-dev libboost-filesystem1.55-dev
 before_script:
     - mkdir -p build
