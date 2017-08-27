@@ -14,9 +14,10 @@ install:
     - wget http://dl.bintray.com/boostorg/release/1.65.0/source/boost_1_65_0.tar.gz
     - tar xzf boost_1_65_0.tar.gz
     - cd boost_1_65_0
-    - ./bootstrap.sh --prefix=/usr --with-toolset=clang --with-libraries=system,thread,date_time,regex,serialization,filesystem
-    - ./b2 toolset=clang cxxflags="-stdlib=libc++ -std=c++11" linkflags="-stdlib=libc++"
-    - sudo ./b2 install >/dev/null
+    - ./bootstrap.sh --prefix=/usr/local --with-libraries=system,thread,date_time,regex,serialization,filesystem
+    - ./b2 clean
+    - ./b2 toolset=clang cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++" --prefix=/usr/local -j 4
+    - sudo ./b2 install toolset=clang cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++" prefix=/usr/local >/dev/null
     - cd ..
 before_script:
     - mkdir -p build
