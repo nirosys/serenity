@@ -2,13 +2,22 @@ language: c++
 dist: trusty
 compiler:
     - clang
-    - gcc
+      #- gcc
 os:
     - linux
 before_install:
     - sudo apt-get update
 install:
-    - sudo apt-get install libboost1.55-dev libboost-system1.55-dev libboost-filesystem1.55-dev
+    - sudo apt-get install clang++-3.9
+    - sudo ln -s /usr/bin/clang-3.9 /usr/bin/clang
+    - sudo ln -s /usr/bin/clang++-3.9 /usr/bin/clang++
+    - wget http://dl.bintray.com/boostorg/release/1.65.0/source/boost_1_65_0.tar.gz
+    - tar xvzf boost_1_65_0.tar.gz
+    - cd boost_1_65_0
+    - ./bootstrap.sh --prefix=/usr --with-toolset=clang --with-libraries=system,thread,date_time,regex,serialization,filesystem
+    - ./b2 toolset=clang cxxflags="-stdlib=libc++ -std=c++11" linkflags="-stdlib=libc++ -std=c++11"
+    - sudo ./b2 install
+    - cd ..
 before_script:
     - mkdir -p build
     - cd build
