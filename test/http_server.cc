@@ -291,7 +291,7 @@ TEST_CASE("Verify extra path parameters", "[server]") {
     }
 }
 
-TEST_CASE("Verify listening on specific IP addresses (IPv6)", "[server]") {
+TEST_CASE("Verify listening on specific IP addresses (IPv6)", "[server][ipv6]") {
     std::random_device rd;
     std::uniform_int_distribution<int> dist(9000, 12000);
     int port = dist(rd);

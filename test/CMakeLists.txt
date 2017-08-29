@@ -3,6 +3,10 @@
 #  Builds Unit Tests
 ###############################################################################
 
+if ("${SERENITY_TEST_IPV6}" STREQUAL "")
+   set(SERENITY_TEST_IPV6 TRUE)
+endif("${SERENITY_TEST_IPV6}" STREQUAL "")
+
 # Sources
 set(test_SRCS
       main.cc
@@ -24,14 +28,20 @@ else()
     add_executable(tests ${test_SRCS})
     target_link_libraries(tests curl ${Boost_LIBRARIES})
 
+    if(SERENITY_TEST_IPV6)
+       set(SERENITY_TEST_FILTER "")
+    else(SERENITY_TEST_IPV6)
+       set(SERENITY_TEST_FILTER "~[ipv6]")
+    endif(SERENITY_TEST_IPV6)
+
     # JUnit Report Generation
     add_custom_target(test_report
-        COMMAND tests --reporter junit > unit_test_report.xml
-        )
+       COMMAND tests --reporter junit "${SERENITY_TEST_FILTER}" > unit_test_report.xml
+       )
 
     # Command-line Report Output... XML?... Ain't nobody got time fo dat!
     add_custom_target(run_tests
-        COMMAND tests --reporter console || true  # Stop build failure.. adds too much output..
-        )
+       COMMAND tests --reporter console "${SERENITY_TEST_FILTER}" || true  # Stop build failure.. adds too much output..
+       )
 endif()
 

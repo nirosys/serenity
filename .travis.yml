@@ -4,25 +4,12 @@ compiler:
     - clang++
 os:
     - linux
+sudo: required
+services:
+   - docker
 before_install:
-    - sudo apt-get update
+   - docker pull nirosys/libboost
 install:
-    - sudo apt list --installed | fgrep boost
-    - sudo apt-get install clang++-3.9
-    - sudo ln -s /usr/bin/clang-3.9 /usr/bin/clang
-    - sudo ln -s /usr/bin/clang++-3.9 /usr/bin/clang++
-    - wget http://dl.bintray.com/boostorg/release/1.65.0/source/boost_1_65_0.tar.gz
-    - tar xzf boost_1_65_0.tar.gz
-    - cd boost_1_65_0
-    - ./bootstrap.sh --with-toolset=clang --prefix=/usr/local --with-libraries=system,thread,date_time,regex,serialization,filesystem cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++"
-    - ./b2 clean
-    - ./b2 toolset=clang cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++" --prefix=/usr/local -j 4
-    - sudo ./b2 install >/dev/null
-    - cd ..
 before_script:
-    - mkdir -p build
-    - cd build
 script:
-    - cmake -DBoost_NO_BOOST_CMAKE=TRUE -DBoost_NO_SYSTEM_PATHS=TRUE -DBOOST_ROOT:PATHNAME=/usr/local -DBoost_LIBRARY_DIRS:FILEPATH=/usr/local/lib ..
-    - make
-    - make run_tests
+   - docker run -t -v `pwd`:/serenity nirosys/clang-boost -c "cd /serenity; mkdir -p build && cd build && cmake -DSERENITY_TEST_IPV6=FALSE .. && make && make run_tests"
