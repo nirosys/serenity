@@ -8,8 +8,8 @@ sudo: required
 services:
    - docker
 before_install:
-   - docker pull nirosys/libboost
+   - docker pull nirosys/libboost:latest
 install:
 before_script:
 script:
-   - docker run -t -v `pwd`:/serenity nirosys/clang-boost -c "cd /serenity; mkdir -p build && cd build && cmake -DSERENITY_TEST_IPV6=FALSE .. && make && make run_tests"
+   - docker run -t -v `pwd`:/serenity nirosys/libboost:latest -c "cd /serenity; mkdir -p build && cd build && cmake -DSERENITY_TEST_IPV6=FALSE .. && make && make run_tests"
