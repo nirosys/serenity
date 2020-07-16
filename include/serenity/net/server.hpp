@@ -73,7 +73,7 @@ namespace serenity { namespace net {
             std::string address_ = "0.0.0.0";
             boost::asio::io_service io_service_;
             boost::asio::ip::tcp::acceptor acceptor_;
-            boost::asio::ip::tcp::socket socket_;
+            //boost::asio::ip::tcp::socket socket_;
             boost::asio::signal_set signals_;
             std::thread running_thread_;
             std::mutex stop_mutex_;
@@ -96,7 +96,7 @@ namespace serenity { namespace net {
         io_service_(),
         signals_(io_service_),
         acceptor_(io_service_),
-        socket_(io_service_),
+        //socket_(io_service_),
         service_resolver_(),
         request_dispatcher_(service_resolver_)
     {
@@ -177,26 +177,28 @@ namespace serenity { namespace net {
 
     template <class resolver_type>
     void server<resolver_type>::do_accept() {
-        acceptor_.async_accept(socket_,
-                [this](boost::system::error_code ec)
-                {
-                    if (!acceptor_.is_open()) {
-                        return;
-                    }
-                    if (!ec) {
-                        // add connection to manager..
-                        connection_manager_.start(
-                                std::make_shared<connection>(
-                                    std::move(socket_),
-                                    connection_manager_,
-                                    request_dispatcher_
-                                )
-                        );
-                        socket_.close();
-                    }
-
-                    do_accept();
+        std::cerr << "do_accept() CALLED!\n";
+        auto new_conn = std::make_shared<connection>(connection_manager_, request_dispatcher_);
+        acceptor_.async_accept(new_conn->get_socket(),
+            [this, &new_conn](boost::system::error_code ec)
+            {
+                std::cerr << "CONNECTION ACCEPTED!"<< std::endl;
+                if (!acceptor_.is_open()) {
+                    return;
                 }
+                std::cerr << "ONE!"<< std::endl;
+                if (!ec) {
+                    std::cerr << "TWO!"<< std::endl;
+                    // add connection to manager..
+                    connection_manager_.start(std::move(new_conn));
+                    std::cerr << "THREE!"<< std::endl;
+                }
+                else {
+                    std::cout << ec.message() << std::endl;
+                }
+
+                do_accept();
+            }
         );
     }
 

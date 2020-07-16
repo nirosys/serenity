@@ -33,8 +33,7 @@ namespace serenity { namespace net {
 
             /** \brief Constructs a new connection, with the underlying socket
              *         and connection manager. */
-            connection(boost::asio::ip::tcp::socket socket,
-                    manager &manager, dispatcher &dispatcher);
+            connection(manager &manager, dispatcher &dispatcher);
 
             virtual ~connection() {}
 
@@ -50,6 +49,9 @@ namespace serenity { namespace net {
 
             /** \brief Returns the associated connection_manager */
             manager &get_manager() { return connection_manager_; }
+            
+            /** \brief Returns the associated ip::tcp::socket */
+            boost::asio::ip::tcp::socket &get_socket() { return socket_; }
 
             using connection_ptr = std::shared_ptr<connection>;
         private:
@@ -65,9 +67,7 @@ namespace serenity { namespace net {
     };
 
     template <class service_resolver_type>
-    connection<service_resolver_type>::connection(connection::socket socket,
-            manager &manager, dispatcher &dispatcher) :
-               socket_(std::move(socket)),
+    connection<service_resolver_type>::connection(manager &manager, dispatcher &dispatcher) :
                connection_manager_(manager),
                request_dispatcher_(dispatcher)
     {
@@ -75,7 +75,12 @@ namespace serenity { namespace net {
 
     template <class service_resolver_type>
     void connection<service_resolver_type>::start() {
-        do_read();
+        std::thread([this]() {
+            std::cerr << "THREAD STARTED!"<< std::endl;
+            do_read();
+        }).detach();
+         
+        std::cerr << "connection::start() RETURNING"<< std::endl;
     }
 
     template <class service_resolver_type>

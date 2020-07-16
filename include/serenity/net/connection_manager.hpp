@@ -44,8 +44,10 @@ namespace serenity { namespace net {
 
     template <class service_resolver_type>
     void connection_manager<service_resolver_type>::start(connection_ptr conn) {
+        std::cerr << "connection_manager::start() CALLED"<< std::endl;
         connections_.insert(conn);
         conn->start();
+        std::cerr << "connection_manager::start() RETURNING"<< std::endl;
     }
 
     template <class service_resolver_type>
