@@ -123,10 +123,7 @@ namespace serenity { namespace net {
         boost::asio::async_write(socket_, buffers,
                 [this, self](boost::system::error_code ec, std::size_t size)
                 {
-                    if (!ec) {
-                        connection_manager_.stop(this->shared_from_this());
-                    }
-                    else  {
+                    if (ec) {
                         std::cerr << "Error writing data: " <<  ec.message() << std::endl;
                         if (ec != boost::asio::error::operation_aborted)
                             connection_manager_.stop(this->shared_from_this());
