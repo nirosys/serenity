@@ -2,13 +2,17 @@
 #define SERENITY_NET_SERVER_HPP
 
 #include <functional>
-#include <boost/asio.hpp>
 #include <thread>
 #include <condition_variable>
 #include <memory>
 #include <iostream>
 
+#include <boost/thread.hpp>
+#include <boost/asio.hpp>
+
 #include "connection_manager.hpp"
+
+const uint32_t max_io_service_threads = 32;
 
 namespace serenity { namespace net {
 
@@ -73,9 +77,8 @@ namespace serenity { namespace net {
             std::string address_ = "0.0.0.0";
             boost::asio::io_service io_service_;
             boost::asio::ip::tcp::acceptor acceptor_;
-            //boost::asio::ip::tcp::socket socket_;
             boost::asio::signal_set signals_;
-            std::thread running_thread_;
+            boost::thread_group running_threads_;
             std::mutex stop_mutex_;
             std::condition_variable stop_condition_;
             bool is_running_ = false;
@@ -96,7 +99,6 @@ namespace serenity { namespace net {
         io_service_(),
         signals_(io_service_),
         acceptor_(io_service_),
-        //socket_(io_service_),
         service_resolver_(),
         request_dispatcher_(service_resolver_)
     {
@@ -141,23 +143,19 @@ namespace serenity { namespace net {
 
         do_accept();
 
-        if (running_thread_.joinable()) // If we didn't cleanup properly.
-            running_thread_.join();
+        running_threads_.join_all();
 
         is_running_ = true;
-        running_thread_ = std::thread(
-                [this]() {
-                    io_service_.run();
-                }
-        );
+        for (int32_t x = 0; x < max_io_service_threads; x++) {
+            running_threads_.create_thread(boost::bind(&boost::asio::io_service::run, &io_service_));
+        }
     }
 
     template <class resolver_type>
     void server<resolver_type>::wait_to_end() {
         std::unique_lock<std::mutex> lk(stop_mutex_);
         stop_condition_.wait(lk, [this] { return !is_running_; });
-        if (running_thread_.joinable()) // wait_to_end will never be called from running_thread_
-            running_thread_.join();
+        running_threads_.join_all();
     }
 
     template <class resolver_type>
@@ -167,9 +165,7 @@ namespace serenity { namespace net {
         if (is_running_) {
             std::unique_lock<std::mutex> lk(stop_mutex_);
             io_service_.stop();
-            if (running_thread_.get_id() != std::this_thread::get_id()) { // Stop *may* be called from running_thread_
-                running_thread_.join();
-            } // running_thread_ may never be joined if this is not the case..
+            running_threads_.join_all();
             stop_condition_.notify_one(); // Notify wait_to_end that we're done..
             is_running_ = false;
         }
@@ -177,28 +173,24 @@ namespace serenity { namespace net {
 
     template <class resolver_type>
     void server<resolver_type>::do_accept() {
-        std::cerr << "do_accept() CALLED!\n";
-        auto new_conn = std::make_shared<connection>(connection_manager_, request_dispatcher_);
-        acceptor_.async_accept(new_conn->get_socket(),
-            [this, &new_conn](boost::system::error_code ec)
-            {
-                std::cerr << "CONNECTION ACCEPTED!"<< std::endl;
-                if (!acceptor_.is_open()) {
-                    return;
+        acceptor_.async_accept(io_service_,
+                [this](const boost::system::error_code &ec, boost::asio::ip::tcp::socket socket) {
+                    if (!acceptor_.is_open()) {
+                        return;
+                    }
+                    if (!ec) {
+                        // add connection to manager..
+                        connection_manager_.start(
+                            std::make_shared<connection>(
+                                std::move(socket), 
+                                connection_manager_, 
+                                request_dispatcher_
+                            )
+                        );
+                    }
+                    
+                    do_accept();
                 }
-                std::cerr << "ONE!"<< std::endl;
-                if (!ec) {
-                    std::cerr << "TWO!"<< std::endl;
-                    // add connection to manager..
-                    connection_manager_.start(std::move(new_conn));
-                    std::cerr << "THREE!"<< std::endl;
-                }
-                else {
-                    std::cout << ec.message() << std::endl;
-                }
-
-                do_accept();
-            }
         );
     }
 
