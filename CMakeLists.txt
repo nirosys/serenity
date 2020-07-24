@@ -7,9 +7,8 @@ project(serenity)
 ###############################################################################
 cmake_minimum_required(VERSION 2.8)
 
-set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.55.0 REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.69.0 REQUIRED COMPONENTS system filesystem thread)
 find_package(Threads REQUIRED)
 
 if (CMAKE_THREAD_LIBS_INIT)

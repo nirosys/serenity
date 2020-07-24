@@ -26,7 +26,7 @@ if (NOT EXISTS "../external/Catch/single_include/catch.hpp")
 else()
     # Add test binary target
     add_executable(tests ${test_SRCS})
-    target_link_libraries(tests curl ${Boost_LIBRARIES})
+    target_link_libraries(tests pthread curl ${Boost_LIBRARIES})
 
     if(SERENITY_TEST_IPV6)
        set(SERENITY_TEST_FILTER "")
