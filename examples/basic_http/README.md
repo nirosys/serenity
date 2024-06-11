@@ -1,7 +1,7 @@
 # Example: Basic HTTP
 
 This example shows how to implement a very basic HTTP-based service with
-serenity.
+serenity. Example payload can be retrieved at localhost:8084/basic/v1/test
 
 ## Setup
 

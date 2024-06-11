@@ -39,18 +39,23 @@ namespace serenity { namespace net {
 
         private:
             std::set<connection_ptr> connections_;
+            std::mutex mtx;
     };
 
 
     template <class service_resolver_type>
     void connection_manager<service_resolver_type>::start(connection_ptr conn) {
+        mtx.lock();
         connections_.insert(conn);
+        mtx.unlock();
         conn->start();
     }
 
     template <class service_resolver_type>
     void connection_manager<service_resolver_type>::stop(connection_ptr conn) {
+        mtx.lock();
         connections_.erase(conn);
+        mtx.unlock();
         conn->stop();
     }
 
@@ -58,12 +63,16 @@ namespace serenity { namespace net {
     void connection_manager<service_resolver_type>::stop() {
         for (auto conn : connections_)
             conn->stop();
+        mtx.lock();
         connections_.clear();
+        mtx.unlock();
     }
 
     template <class service_resolver_type>
     void connection_manager<service_resolver_type>::remove(const connection_ptr &conn) {
+        mtx.lock();
         connections_.erase(conn);
+        mtx.unlock();
     }
     
 } /* http */ } /* serenity */
